@@ -10,13 +10,18 @@ function name(p){return state.lang==="tc"?p.tc:p.en;}
 function region(p){return state.lang==="en"?(REGION_EN[p.region]||p.region):p.region;}
 function addr(p){return state.lang==="en"?(p.addrEn||p.addr||""):(p.addrTc||p.addr||"");}
 function specTxt(p){
-  const raw=p.specsTc||p.specs||"";
-  if(state.lang==="en"){
-    if(p.specsEn) return p.specsEn;
-    if(raw.indexOf("請向")>=0) return "Please confirm specialties with the hospital";
-    return window.specToEn?window.specToEn(raw):raw;
+  const raw=String(p.specsTc||p.specs||p.specsEn||"");
+  if(raw.indexOf("請向")>=0||raw.indexOf("Please confirm")>=0){
+    return state.lang==="en"?"Please confirm specialties with the hospital":"請向院方查詢確實專科";
   }
-  return raw;
+  if(state.lang==="en") return p.specsEn&&p.specsEn.indexOf("請向")<0?p.specsEn:(window.specToEn?window.specToEn(p.specsTc||p.specs||""):raw);
+  return p.specsTc||p.specs||"";
+}
+function goodWeb(u){
+  if(!u||!/^https?:\/\//i.test(u)) return "";
+  const t=u.replace(/\/$/,"");
+  if(t==="https://www.ha.org.hk"||u.indexOf("Content_ID=10036")>=0) return "";
+  return u;
 }
 function specBag(p){return (p.specsTc||"")+" "+(p.specs||"")+" "+(p.specsEn||"");}
 function filtered(){
@@ -59,9 +64,12 @@ function filters(){
 function actions(p){
   const tel=p.phone?("tel:"+p.phone.replace(/\s/g,"")):"";
   const maps="https://maps.apple.com/?ll="+p.lat+","+p.lng+"&q="+encodeURIComponent(name(p));
-  const callLbl=state.lang==="tc"?"致電":"Call";
-  const call=p.phone?('<a class="btn" href="'+tel+'" onclick="event.stopPropagation()">'+callLbl+"</a>"):('<a class="btn" style="opacity:.4;pointer-events:none">'+callLbl+"</a>");
-  return '<div class="actions">'+call+'<a class="btn ghost" href="'+maps+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+(state.lang==="tc"?"地圖":"Map")+'</a><a class="btn ghost" href="'+p.web+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+(state.lang==="tc"?"網站":"Site")+"</a></div>";
+  const site=goodWeb(p.web);
+  const L=state.lang==="tc";
+  const call=p.phone?('<a class="btn" href="'+tel+'">'+ (L?"致電":"Call")+"</a>"):("");
+  const mapBtn='<a class="btn ghost" href="'+maps+'" target="_blank" rel="noopener">'+(L?"地圖":"Map")+"</a>";
+  const siteBtn=site?('<a class="btn ghost" href="'+site+'" target="_blank" rel="noopener">'+(L?"網站":"Site")+"</a>"):"";
+  return '<div class="actions" onclick="event.stopPropagation()">'+call+mapBtn+siteBtn+"</div>";
 }
 function tags(p){
   const L=state.lang==="tc";
