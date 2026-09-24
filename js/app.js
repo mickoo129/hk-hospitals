@@ -100,7 +100,7 @@ function bind(){
   document.querySelectorAll(".tab").forEach(el=>{el.onclick=()=>{state.view=el.dataset.view;state.sel=null;paint();};});
 }
 $("#view").innerHTML='<div class="empty">載入中…</div>';
-fetch("data/places.json").then(r=>r.json()).then(data=>{state.places=data;bind();paint();}).catch(()=>{
+Promise.all(["data/places-a.json","data/places-b.json"].map(u=>fetch(u).then(r=>r.json()))).then(parts=>{state.places=parts[0].concat(parts[1]);bind();paint();}).catch(()=>{
   $("#view").innerHTML='<div class="empty">未能載入名冊。</div>';
 });
 })();
