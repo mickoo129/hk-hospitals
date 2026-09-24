@@ -86,7 +86,7 @@ function renderMap(){
 }
 function renderAbout(){
   const L=state.lang==="tc";
-  $("#view").innerHTML='<article class="detail"><div class="detail-hero"><h2>'+(L?"說明":"About")+'</h2></div><div class="block"><p style="margin:0;line-height:1.6">'+(L?"用專科篩選找出有該服務的醫院，再用「附近」按距離排序。資料為靜態名冊。危急請致電 999。":"Filter by specialty, then Nearby. Call 999 in an emergency.")+"</p></div></article>";
+  $("#view").innerHTML='<article class="detail"><div class="detail-hero"><h2>'+(L?"說明":"About")+'</h2></div><div class="block"><p style="margin:0;line-height:1.6">'+(L?"用專科篩選找出有該服務的醫院，再用「附近」按距離排序。危急請致電 999。":"Filter by specialty, then Nearby. Call 999 in an emergency.")+"</p></div></article>";
 }
 function paint(){
   document.documentElement.lang=state.lang==="tc"?"zh-Hant-HK":"en";
@@ -110,3 +110,5 @@ function bind(){
   $("#btnEn").onclick=()=>{state.lang="en";localStorage.setItem("hkHospLang","en");paint();};
   document.querySelectorAll(".tab").forEach(el=>{el.onclick=()=>{state.view=el.dataset.view;state.sel=null;paint();};});
 }
+window.state=state;window.bind=bind;window.paint=paint;
+})();
