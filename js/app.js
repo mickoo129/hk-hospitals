@@ -1,11 +1,13 @@
 (function(){
 const SPEC_CHIPS=["內科","外科","骨科","兒科","婦科","眼科","耳鼻喉科","精神科","急症科","復康","腫瘤科","家庭醫學"];
-const state={lang:localStorage.getItem("hkHospLang")||"tc",view:"list",q:"",sector:"all",region:"all",spec:"all",ae:false,sel:null,places:[]};
+const state={lang:localStorage.getItem("hkHospLang")||"tc",view:"list",q:"",sector:"all",region:"all",spec:"all",ae:false,nearby:false,loc:null,sel:null,places:[]};
+function km(a,b){const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180;const s=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(s));}
+function askLoc(){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{state.loc={lat:p.coords.latitude,lng:p.coords.longitude};paint();},()=>{state.nearby=false;paint();},{timeout:8000});}
 const $=s=>document.querySelector(s);
 function name(p){return state.lang==="tc"?p.tc:p.en;}
 function filtered(){
   const q=state.q.trim().toLowerCase();
-  return state.places.filter(p=>{
+  const list=state.places.filter(p=>{
     if(state.sector==="pub"&&!p.pub)return false;
     if(state.sector==="pri"&&p.pub)return false;
     if(state.sector==="sop"&&p.kind!=="sop")return false;
@@ -17,14 +19,17 @@ function filtered(){
       if(bag.indexOf(q)<0)return false;
     }
     return true;
-  });
+  }).map(p=>state.loc?Object.assign({},p,{_km:km(state.loc,{lat:p.lat,lng:p.lng})}):p);
+  if(state.nearby&&state.loc) list.sort((a,b)=>(a._km||99)-(b._km||99));
+  return list;
 }
 function chip(label,on,fn){const b=document.createElement("button");b.type="button";b.className="chip"+(on?" on":"");b.textContent=label;b.onclick=fn;return b;}
 function filters(){
   const el=$("#filters"); if(!el)return; el.innerHTML="";
   const add=(l,on,fn)=>el.appendChild(chip(l,on,fn));
   const L=state.lang==="tc";
-  add(L?"全部":"All",state.sector==="all"&&state.region==="all"&&!state.ae&&state.spec==="all",()=>{state.sector="all";state.region="all";state.ae=false;state.spec="all";paint();});
+  add(L?"全部":"All",state.sector==="all"&&state.region==="all"&&!state.ae&&state.spec==="all"&&!state.nearby,()=>{state.sector="all";state.region="all";state.ae=false;state.spec="all";state.nearby=false;paint();});
+  add(L?"附近":"Nearby",state.nearby,()=>{state.nearby=!state.nearby;if(state.nearby&&!state.loc)askLoc();else paint();});
   add(L?"公立":"Public",state.sector==="pub",()=>{state.sector=state.sector==="pub"?"all":"pub";paint();});
   add(L?"私家":"Private",state.sector==="pri",()=>{state.sector=state.sector==="pri"?"all":"pri";paint();});
   add(L?"專科門診":"SOP",state.sector==="sop",()=>{state.sector=state.sector==="sop"?"all":"sop";paint();});
@@ -52,7 +57,8 @@ function renderList(){
   const wrap=root.querySelector(".card-list");
   rows.forEach(p=>{
     const b=document.createElement("button"); b.type="button"; b.className="place-card";
-    b.innerHTML='<div class="place-name">'+name(p)+'</div><div class="place-meta">'+p.region+" · "+p.addr+'</div>'+tags(p)+'<div class="place-meta" style="margin-top:8px">'+(p.specs||"")+"</div>"+actions(p);
+    const dist=p._km!=null?'<span class="km"> · '+p._km.toFixed(1)+(state.lang==="tc"?" 公里":" km")+"</span>":"";
+    b.innerHTML='<div class="place-name">'+name(p)+'</div><div class="place-meta">'+p.region+dist+" · "+p.addr+'</div>'+tags(p)+'<div class="place-meta" style="margin-top:8px">'+(p.specs||"")+"</div>"+actions(p);
     b.onclick=()=>{state.sel=p.id;state.view="detail";paint();};
     wrap.appendChild(b);
   });
@@ -70,17 +76,18 @@ function renderMap(){
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(map);
   const b=[];
   filtered().forEach(p=>{if(p.lat==null)return;b.push([p.lat,p.lng]);L.marker([p.lat,p.lng]).addTo(map).bindPopup("<b>"+name(p)+"</b><br>"+p.addr+"<br>"+(p.specs||""));});
+  if(state.loc) L.circleMarker([state.loc.lat,state.loc.lng],{radius:7,color:"#0b8a6e",fillOpacity:1}).addTo(map);
   if(b.length)map.fitBounds(b,{padding:[24,24],maxZoom:13});
   setTimeout(()=>map.invalidateSize(),80);
 }
 function renderAbout(){
   const L=state.lang==="tc";
-  $("#view").innerHTML='<article class="detail"><div class="detail-hero"><h2>'+(L?"說明":"About")+'</h2></div><div class="block"><p style="margin:0;line-height:1.6">'+(L?"本網站整理全港公立醫院、私家醫院及醫院管理局專科門診地點，並標示各院主要專科。資料為靜態名冊，並非即時急症室輪候。專科以公開資料歸納，個別服務請向院方確認。危急請致電 999。":"Directory of public hospitals, private hospitals and HA specialist clinics in Hong Kong, with main specialties. This is a static directory, not a live A&E queue. Call 999 in an emergency.")+"</p></div></article>";
+  $("#view").innerHTML='<article class="detail"><div class="detail-hero"><h2>'+(L?"說明":"About")+'</h2></div><div class="block"><p style="margin:0;line-height:1.6">'+(L?"用專科篩選找出有該服務的醫院，再用「附近」按距離排序。資料為靜態名冊，並非即時急症室人流。危急請致電 999。":"Filter by specialty, then use Nearby to sort by distance. This is a static directory, not a live A&E queue. Call 999 in an emergency.")+"</p></div></article>";
 }
 function paint(){
   document.documentElement.lang=state.lang==="tc"?"zh-Hant-HK":"en";
   $("#title").textContent=state.lang==="tc"?"香港醫院指南":"Hong Kong Hospitals";
-  $("#subtitle").textContent=state.lang==="tc"?"公立 · 私家 · 專科門診":"Public · Private · Specialist clinics";
+  $("#subtitle").textContent=state.lang==="tc"?"按專科查詢 · 附近醫院":"Find by specialty · Nearby";
   $("#search").placeholder=state.lang==="tc"?"搜尋醫院、診所或專科":"Search hospital, clinic or specialty";
   $("#btnTc").classList.toggle("on",state.lang==="tc");
   $("#btnEn").classList.toggle("on",state.lang==="en");
@@ -100,7 +107,8 @@ function bind(){
   document.querySelectorAll(".tab").forEach(el=>{el.onclick=()=>{state.view=el.dataset.view;state.sel=null;paint();};});
 }
 $("#view").innerHTML='<div class="empty">載入中…</div>';
-Promise.all(["data/places-a.json","data/places-b.json"].map(u=>fetch(u).then(r=>r.json()))).then(parts=>{state.places=parts[0].concat(parts[1]);bind();paint();}).catch(()=>{
+Promise.all(["data/places-a.json","data/places-b.json"].map(u=>fetch(u).then(r=>{if(!r.ok)throw new Error(u);return r.json();}))).then(parts=>{state.places=parts[0].concat(parts[1]);bind();paint();}).catch(()=>{
   $("#view").innerHTML='<div class="empty">未能載入名冊。</div>';
+  bind();
 });
 })();
