@@ -16,6 +16,7 @@
  *   sopc      true＝有專科門診（公立需轉介信）
  *   opd       門診說明（私家：門診時間；公立：普通科／其他門診）
  *   specs     主要專科（用下面 SPECS 嘅名）
+ *   inst      true＝療養／護養院舍（一般人唔可以直接求診，預設隱藏）
  *   note      備註
  *   lat/lng   大約座標
  */
@@ -41,10 +42,10 @@ window.HOSPITALS = [
 {id:"tweh",name:"東華東院",en:"Tung Wah Eastern Hospital",type:"public",kind:"綜合醫院",region:"港島",district:"灣仔",cluster:"港島東",
  addr:"香港銅鑼灣東院道19號",phone:"2162 6888",web:"https://www.ha.org.hk/tweh/",ae:false,sopc:true,
  specs:["內科","眼科","復康科","中醫"],lat:22.2775,lng:114.1880},
-{id:"wchh",name:"黃竹坑醫院",en:"Wong Chuk Hang Hospital",type:"public",kind:"復康／療養",region:"港島",district:"南區",cluster:"港島東",
+{id:"wchh",inst:true,name:"黃竹坑醫院",en:"Wong Chuk Hang Hospital",type:"public",kind:"復康／療養",region:"港島",district:"南區",cluster:"港島東",
  addr:"香港黃竹坑黃竹坑徑2號",phone:"2873 7222",web:"https://www.ha.org.hk/",ae:false,sopc:false,
  specs:["復康科","紓緩治療"],note:"老人科療養及紓緩服務。",lat:22.2508,lng:114.1658},
-{id:"chkch",name:"舂磡角慈氏護養院",en:"Cheshire Home, Chung Hom Kok",type:"public",kind:"護養院",region:"港島",district:"南區",cluster:"港島東",
+{id:"chkch",inst:true,name:"舂磡角慈氏護養院",en:"Cheshire Home, Chung Hom Kok",type:"public",kind:"護養院",region:"港島",district:"南區",cluster:"港島東",
  addr:"香港舂磡角道128號",phone:"2899 1300",web:"https://www.ha.org.hk/",ae:false,sopc:false,
  specs:["復康科"],note:"長期護養服務，需由醫院轉介。",lat:22.2136,lng:114.2025},
 {id:"sjh",name:"長洲醫院",en:"St. John Hospital",type:"public",kind:"綜合醫院",region:"離島",district:"離島",cluster:"港島東",
@@ -99,7 +100,7 @@ window.HOSPITALS = [
 {id:"olmh",name:"聖母醫院",en:"Our Lady of Maryknoll Hospital",type:"public",kind:"綜合醫院",region:"九龍",district:"黃大仙",cluster:"九龍中",
  addr:"九龍黃大仙沙田坳道118號",phone:"2320 2121",web:"https://www.ha.org.hk/olmh/",ae:false,sopc:true,
  specs:["內科","家庭醫學","復康科"],lat:22.3427,lng:114.1960},
-{id:"wtsh",name:"東華三院黃大仙醫院",en:"TWGHs Wong Tai Sin Hospital",type:"public",kind:"復康／療養",region:"九龍",district:"黃大仙",cluster:"九龍中",
+{id:"wtsh",inst:true,name:"東華三院黃大仙醫院",en:"TWGHs Wong Tai Sin Hospital",type:"public",kind:"復康／療養",region:"九龍",district:"黃大仙",cluster:"九龍中",
  addr:"九龍黃大仙沙田坳道124號",phone:"2320 0377",web:"https://www.ha.org.hk/",ae:false,sopc:false,
  specs:["復康科","紓緩治療"],lat:22.3437,lng:114.1966},
 
@@ -147,10 +148,10 @@ window.HOSPITALS = [
 {id:"sh",name:"沙田醫院",en:"Shatin Hospital",type:"public",kind:"復康／療養",region:"新界",district:"沙田",cluster:"新界東",
  addr:"新界沙田馬鞍山亞公角街33號",phone:"3919 7500",web:"https://www.ha.org.hk/sh/",ae:false,sopc:true,
  specs:["內科","復康科","精神科"],lat:22.4043,lng:114.2160},
-{id:"bh",name:"白普理寧養中心",en:"Bradbury Hospice",type:"public",kind:"紓緩治療",region:"新界",district:"沙田",cluster:"新界東",
+{id:"bh",inst:true,name:"白普理寧養中心",en:"Bradbury Hospice",type:"public",kind:"紓緩治療",region:"新界",district:"沙田",cluster:"新界東",
  addr:"新界沙田亞公角山路17號",phone:"2636 0163",web:"https://www.ha.org.hk/",ae:false,sopc:true,
  specs:["紓緩治療"],note:"末期癌症紓緩及寧養服務，需由醫生轉介。",lat:22.4005,lng:114.2118},
-{id:"stch",name:"沙田慈氏護養院",en:"Cheshire Home, Shatin",type:"public",kind:"護養院",region:"新界",district:"沙田",cluster:"新界東",
+{id:"stch",inst:true,name:"沙田慈氏護養院",en:"Cheshire Home, Shatin",type:"public",kind:"護養院",region:"新界",district:"沙田",cluster:"新界東",
  addr:"新界沙田亞公角山路30號",phone:"2636 7288",web:"https://www.ha.org.hk/",ae:false,sopc:false,
  specs:["復康科"],note:"長期護養服務，需由醫院轉介。",lat:22.4012,lng:114.2104},
 
@@ -170,7 +171,7 @@ window.HOSPITALS = [
 {id:"cph",name:"青山醫院",en:"Castle Peak Hospital",type:"public",kind:"專科醫院",region:"新界",district:"屯門",cluster:"新界西",
  addr:"新界屯門青松觀路15號",phone:"2456 7111",web:"https://www3.ha.org.hk/cph/",ae:false,sopc:true,
  specs:["精神科"],lat:22.4093,lng:113.9781},
-{id:"slh",name:"小欖醫院",en:"Siu Lam Hospital",type:"public",kind:"專科醫院",region:"新界",district:"屯門",cluster:"新界西",
+{id:"slh",inst:true,name:"小欖醫院",en:"Siu Lam Hospital",type:"public",kind:"專科醫院",region:"新界",district:"屯門",cluster:"新界西",
  addr:"新界屯門青松觀路15號",phone:"2456 7111",web:"https://www.ha.org.hk/",ae:false,sopc:false,
  specs:["精神科"],note:"為嚴重智障人士提供住院及復康服務。",lat:22.4095,lng:113.9784},
 

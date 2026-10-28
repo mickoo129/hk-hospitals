@@ -8,7 +8,7 @@ var TYPE_NAME = {public:"公立",private:"私家",cm:"中醫醫院"};
 var KIND_ORDER = ["綜合醫院","專科醫院","專科中心","中醫醫院","復康／療養","紓緩治療","護養院"];
 var $ = function(id){ return document.getElementById(id); };
 
-function blank(){ return {v:"list",es:"near",q:"",r:"",d:"",s:"",t:"",ae:false,sopc:false,acute:false,sort:"area"}; }
+function blank(){ return {v:"list",es:"near",q:"",r:"",d:"",s:"",t:"",ae:false,sopc:false,acute:false,inst:false,sort:"area"}; }
 var st = blank();
 var openIds = {};   // 已展開「詳細」嘅卡片
 var here = null;      // {lat,lng}
@@ -41,7 +41,7 @@ function readHash(){
   var p = new URLSearchParams(location.hash.replace(/^#/,""));
   st.q = p.get("q") || ""; st.r = p.get("r") || ""; st.d = p.get("d") || "";
   st.s = p.get("s") || ""; st.t = p.get("t") || "";
-  st.ae = p.get("ae") === "1"; st.sopc = p.get("sopc") === "1"; st.acute = p.get("acute") === "1";
+  st.ae = p.get("ae") === "1"; st.sopc = p.get("sopc") === "1"; st.acute = p.get("acute") === "1"; st.inst = p.get("inst") === "1";
   st.sort = p.get("sort") || "area";
   st.v = p.get("v") === "er" ? "er" : "list";
   st.es = p.get("es") === "wait" ? "wait" : "near";
@@ -52,7 +52,7 @@ function writeHash(){
   var p = new URLSearchParams();
   if (st.q) p.set("q", st.q); if (st.r) p.set("r", st.r); if (st.d) p.set("d", st.d);
   if (st.s) p.set("s", st.s); if (st.t) p.set("t", st.t);
-  if (st.ae) p.set("ae","1"); if (st.sopc) p.set("sopc","1"); if (st.acute) p.set("acute","1");
+  if (st.ae) p.set("ae","1"); if (st.sopc) p.set("sopc","1"); if (st.acute) p.set("acute","1"); if (st.inst) p.set("inst","1");
   if (st.sort !== "area") p.set("sort", st.sort);
   if (st.v === "er"){ p = new URLSearchParams(); p.set("v","er"); if (st.r) p.set("r", st.r); if (st.es === "wait") p.set("es","wait"); }
   var h = p.toString();
@@ -83,12 +83,13 @@ function syncControls(){
   if (ds.indexOf(st.d) < 0) st.d = "";
   $("fDistrict").innerHTML = '<option value="">全部地區</option>' + ds.map(function(d){ return '<option' + (d === st.d ? " selected" : "") + '>' + esc(d) + '</option>'; }).join("");
   $("fSpec").innerHTML = '<option value="">全部專科</option>' + window.SPECS.map(function(s){ return '<option' + (s === st.s ? " selected" : "") + '>' + esc(s) + '</option>'; }).join("");
-  $("fAe").checked = st.ae; $("fSopc").checked = st.sopc; $("fAcute").checked = st.acute;
+  $("fAe").checked = st.ae; $("fSopc").checked = st.sopc; $("fAcute").checked = st.acute; $("fInst").checked = st.inst;
   $("fSort").value = st.sort;
 }
 
 /* ---------- 篩選 + 排序 ---------- */
-function match(h){
+function match(h, ignoreInst){
+  if (h.inst && !st.inst && !ignoreInst && !st.q) return false;
   if (st.r && h.region !== st.r) return false;
   if (st.d && h.district !== st.d) return false;
   if (st.t && h.type !== st.t) return false;
@@ -210,13 +211,15 @@ function summary(n){
   var tags = [];
   if (st.r) tags.push(st.r); if (st.d) tags.push(st.d); if (st.t) tags.push(TYPE_NAME[st.t]);
   if (st.s) tags.push(st.s); if (st.ae) tags.push("24 小時急症"); if (st.sopc) tags.push("專科門診");
-  if (st.acute) tags.push("綜合醫院"); if (st.q) tags.push("「" + st.q + "」");
+  if (st.acute) tags.push("綜合醫院"); if (st.inst) tags.push("包括院舍"); if (st.q) tags.push("「" + st.q + "」");
   var sortTxt = st.sort === "near" ? (here ? "按距離排序" : "按距離排序（未取得位置）") : st.sort === "wait" ? "按急症室等候時間排序" : "按地區排序";
-  return '<b>' + n + '</b> 間醫院' + (tags.length ? '　' + tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join("") : '　（全部）') + '　<span>' + sortTxt + '</span>';
+  var hid = st.inst || st.q ? 0 : H.filter(function(h){ return h.inst && match(h, true); }).length;
+  var more = hid ? '<span class="hid">另有 ' + hid + ' 間療養／護養院舍已隱藏 <button type="button" class="link-btn" data-inst>顯示</button></span>' : '';
+  return '<b>' + n + '</b> 間醫院' + (tags.length ? '　' + tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join("") : '　（全部）') + '　<span>' + sortTxt + '</span>' + more;
 }
 
 function render(){
-  var list = sortList(H.filter(match));
+  var list = sortList(H.filter(function(h){ return match(h); }));
   $("summary").innerHTML = summary(list.length);
   $("list").innerHTML = list.length ? list.map(card).join("") :
     '<div class="empty">搵唔到符合條件嘅醫院。<br>試下放寬地區或專科，或者<button type="button" class="link-btn" data-reset>清除篩選</button>。</div>';
@@ -308,6 +311,8 @@ $("fSpec").addEventListener("change", function(e){ st.s = e.target.value; update
 $("fAe").addEventListener("change", function(e){ st.ae = e.target.checked; update(); });
 $("fSopc").addEventListener("change", function(e){ st.sopc = e.target.checked; update(); });
 $("fAcute").addEventListener("change", function(e){ st.acute = e.target.checked; update(); });
+$("fInst").addEventListener("change", function(e){ st.inst = e.target.checked; update(); });
+$("summary").addEventListener("click", function(e){ if (e.target.closest("[data-inst]")){ st.inst = true; update(); } });
 $("fSort").addEventListener("change", function(e){
   st.sort = e.target.value;
   if (st.sort === "near") useNear("area"); else update();

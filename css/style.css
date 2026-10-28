@@ -99,6 +99,8 @@ select:focus{outline:0;border-color:var(--mk-brand)}
 .summary{margin:18px 2px 8px;font-size:15px;color:var(--mk-muted)}
 .summary b{font-family:var(--mk-num);font-size:22px;color:var(--mk-deep);margin-right:2px}
 .summary .tag{display:inline-block;background:var(--mk-brand-soft);color:var(--mk-brand-ink);border-radius:6px;padding:1px 8px;margin:2px 4px 2px 0;font-size:13px;font-weight:700}
+.summary .hid{display:inline-block;font-size:13px;margin-left:6px}
+.summary .hid .link-btn{padding:0 2px;font-size:13px}
 .aed-info{font-size:13px;color:var(--mk-muted);margin:0 2px 10px}
 .aed-info:empty{display:none}
 
@@ -229,6 +231,7 @@ select:focus{outline:0;border-color:var(--mk-brand)}
   .info svg{width:11px;height:11px}
   .info div{grid-template-columns:13px 1fr}
   .summary{margin:0 0 6px}
+  .summary .hid{display:none}
   .mk-footer{margin-top:10px;break-inside:avoid}
   .disc p{font-size:8pt}
 }
