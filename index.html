@@ -1,42 +1,98 @@
 <!DOCTYPE html>
-<html lang="zh-Hant-HK">
+<html lang="zh-HK">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#eef8f4">
-  <title>香港醫院指南 · Hong Kong Hospitals</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/app.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>香港醫院指南｜公立、私家醫院及專科搜尋</title>
+<meta name="description" content="香港所有公立及私家醫院一覽：按港島、九龍、新界、離島及 18 區篩選，查專科、24 小時急症、專科門診，附地址、電話、Google 地圖同急症室即時等候時間。">
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#0E5E57">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-row">
-      <div class="brand">
-        <h1 id="title">香港醫院指南</h1>
-        <div class="sub" id="subtitle">公立 · 私家 · 專科門診</div>
-      </div>
-      <div class="lang-toggle">
-        <button type="button" id="btnTc" class="on">繁</button>
-        <button type="button" id="btnEn">EN</button>
+<div class="mk-print-head"><b>MKPA · 香港醫院指南</b><span>列印日期：<span class="mk-print-date"></span></span></div>
+
+<header class="top">
+  <div class="mk-wrap top-row">
+    <a class="brand" href="./"><img class="mk-logo" src="favicon.svg" alt="" width="36" height="36">
+      <span><b>香港醫院指南</b><small>公立 · 私家 · 專科 · 急症</small></span></a>
+    <button type="button" class="mk-print-btn" onclick="window.print()">列印 / 存 PDF</button>
+  </div>
+</header>
+
+<main class="mk-wrap">
+  <section class="sos mk-no-print" aria-label="緊急情況">
+    <div class="sos-txt"><b>危急情況請即致電 999</b><span>胸痛、呼吸困難、中風徵狀、嚴重受傷等，唔好自行前往。</span></div>
+    <div class="sos-btns">
+      <a class="btn btn-danger" href="tel:999">致電 999</a>
+      <button type="button" class="btn btn-line" id="btnAe">搵最近急症室</button>
+    </div>
+  </section>
+
+  <section class="panel mk-no-print" aria-label="篩選">
+    <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="搜尋醫院名稱、地區或地址" autocomplete="off"></label>
+
+    <div class="frow">
+      <span class="flabel">區域</span>
+      <div class="seg" id="fRegion"></div>
+    </div>
+    <div class="frow two">
+      <label><span class="flabel">地區</span><select id="fDistrict"></select></label>
+      <label><span class="flabel">專科</span><select id="fSpec"></select></label>
+    </div>
+    <div class="frow">
+      <span class="flabel">類型</span>
+      <div class="seg" id="fType"></div>
+    </div>
+    <div class="frow">
+      <span class="flabel">服務</span>
+      <div class="chips">
+        <label class="chk"><input type="checkbox" id="fAe"><span>24 小時急症</span></label>
+        <label class="chk"><input type="checkbox" id="fSopc"><span>專科門診</span></label>
+        <label class="chk"><input type="checkbox" id="fAcute"><span>只看綜合醫院</span></label>
       </div>
     </div>
-    <div class="search-wrap">
-      <span class="search-ico">⌕</span>
-      <input id="search" type="search" placeholder="搜尋醫院、診所或專科">
+    <div class="frow bar">
+      <label class="sortl"><span class="flabel">排序</span><select id="fSort">
+        <option value="area">按地區</option>
+        <option value="near">按距離（用我位置）</option>
+        <option value="wait">按急症室等候時間</option>
+      </select></label>
+      <button type="button" class="link-btn" id="btnReset">清除篩選</button>
     </div>
-  </header>
-  <div class="filters" id="filters"></div>
-  <main id="view"></main>
-  <nav class="tabbar">
-    <button class="tab on" data-view="list"><span>目錄</span></button>
-    <button class="tab" data-view="map"><span>地圖</span></button>
-    <button class="tab" data-view="about"><span>說明</span></button>
-  </nav>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="js/i18n.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/boot.js"></script>
-  <script src="js/lang-swap.js"></script>
-  <script src="js/spec-fix.js"></script>
+  </section>
+
+  <div class="summary" id="summary" aria-live="polite"></div>
+  <div class="aed-info mk-no-print" id="aedInfo"></div>
+  <div class="grid" id="list"></div>
+
+  <footer class="mk-footer">
+    <div class="disc">
+      <p><b>使用須知</b>：本工具只供參考，唔構成醫療建議。專科、服務時間、收費及急症安排會變動，求診前請致電醫院或瀏覽官方網站確認。公立專科門診一般需要醫生轉介信；跨聯網穩定新症可能唔獲安排。私家醫院大部分專科由駐院或到診醫生提供，個別醫生、收費請直接向醫院查詢。地圖距離為直線距離，只供排序參考。</p>
+      <p><b>資料來源</b>：醫院管理局醫院／機構名單及專科門診名單、醫管局急症室等候時間開放數據（即時）、衞生署私營醫療機構規管辦公室、各醫院網站及公佈、政府新聞公報。醫院資料核對日期：<span id="checked"></span>。</p>
+    </div>
+    <div class="mk-ecard">
+      <div class="mk-ecard-txt"><b>想進一步了解或有疑問？</b><span>歡迎查看我的電子名片，可直接 WhatsApp、加 IG 或儲存聯絡資料。</span></div>
+      <a class="mk-ecard-btn" href="https://api.portfoplus.com/api/v1/adviser/5e41564ab3b1bc00153394db?m=link&amp;r=adviser" target="_blank" rel="noopener">查看電子名片 <span aria-hidden="true">→</span></a>
+      <div class="mk-ecard-qr"><svg viewBox="0 0 41 41" width="90" height="90" shape-rendering="crispEdges" aria-label="電子名片二維碼"><rect width="41" height="41" fill="#fff"/><path d="M2,2h1v1h-1zM3,2h1v1h-1zM4,2h1v1h-1zM5,2h1v1h-1zM6,2h1v1h-1zM7,2h1v1h-1zM8,2h1v1h-1zM11,2h1v1h-1zM16,2h1v1h-1zM19,2h1v1h-1zM20,2h1v1h-1zM21,2h1v1h-1zM22,2h1v1h-1zM25,2h1v1h-1zM28,2h1v1h-1zM32,2h1v1h-1zM33,2h1v1h-1zM34,2h1v1h-1zM35,2h1v1h-1zM36,2h1v1h-1zM37,2h1v1h-1zM38,2h1v1h-1zM2,3h1v1h-1zM8,3h1v1h-1zM11,3h1v1h-1zM15,3h1v1h-1zM16,3h1v1h-1zM18,3h1v1h-1zM19,3h1v1h-1zM22,3h1v1h-1zM24,3h1v1h-1zM28,3h1v1h-1zM29,3h1v1h-1zM32,3h1v1h-1zM38,3h1v1h-1zM2,4h1v1h-1zM4,4h1v1h-1zM5,4h1v1h-1zM6,4h1v1h-1zM8,4h1v1h-1zM10,4h1v1h-1zM14,4h1v1h-1zM22,4h1v1h-1zM23,4h1v1h-1zM24,4h1v1h-1zM25,4h1v1h-1zM29,4h1v1h-1zM32,4h1v1h-1zM34,4h1v1h-1zM35,4h1v1h-1zM36,4h1v1h-1zM38,4h1v1h-1zM2,5h1v1h-1zM4,5h1v1h-1zM5,5h1v1h-1zM6,5h1v1h-1zM8,5h1v1h-1zM10,5h1v1h-1zM11,5h1v1h-1zM14,5h1v1h-1zM18,5h1v1h-1zM19,5h1v1h-1zM21,5h1v1h-1zM24,5h1v1h-1zM25,5h1v1h-1zM26,5h1v1h-1zM27,5h1v1h-1zM28,5h1v1h-1zM29,5h1v1h-1zM30,5h1v1h-1zM32,5h1v1h-1zM34,5h1v1h-1zM35,5h1v1h-1zM36,5h1v1h-1zM38,5h1v1h-1zM2,6h1v1h-1zM4,6h1v1h-1zM5,6h1v1h-1zM6,6h1v1h-1zM8,6h1v1h-1zM10,6h1v1h-1zM11,6h1v1h-1zM16,6h1v1h-1zM17,6h1v1h-1zM20,6h1v1h-1zM21,6h1v1h-1zM25,6h1v1h-1zM30,6h1v1h-1zM32,6h1v1h-1zM34,6h1v1h-1zM35,6h1v1h-1zM36,6h1v1h-1zM38,6h1v1h-1zM2,7h1v1h-1zM8,7h1v1h-1zM10,7h1v1h-1zM12,7h1v1h-1zM14,7h1v1h-1zM20,7h1v1h-1zM22,7h1v1h-1zM23,7h1v1h-1zM24,7h1v1h-1zM29,7h1v1h-1zM32,7h1v1h-1zM38,7h1v1h-1zM2,8h1v1h-1zM3,8h1v1h-1zM4,8h1v1h-1zM5,8h1v1h-1zM6,8h1v1h-1zM7,8h1v1h-1zM8,8h1v1h-1zM10,8h1v1h-1zM12,8h1v1h-1zM14,8h1v1h-1zM16,8h1v1h-1zM18,8h1v1h-1zM20,8h1v1h-1zM22,8h1v1h-1zM24,8h1v1h-1zM26,8h1v1h-1zM28,8h1v1h-1zM30,8h1v1h-1zM32,8h1v1h-1zM33,8h1v1h-1zM34,8h1v1h-1zM35,8h1v1h-1zM36,8h1v1h-1zM37,8h1v1h-1zM38,8h1v1h-1zM10,9h1v1h-1zM11,9h1v1h-1zM12,9h1v1h-1zM13,9h1v1h-1zM15,9h1v1h-1zM16,9h1v1h-1zM17,9h1v1h-1zM23,9h1v1h-1zM24,9h1v1h-1zM25,9h1v1h-1zM26,9h1v1h-1zM28,9h1v1h-1zM2,10h1v1h-1zM4,10h1v1h-1zM5,10h1v1h-1zM6,10h1v1h-1zM7,10h1v1h-1zM8,10h1v1h-1zM15,10h1v1h-1zM16,10h1v1h-1zM17,10h1v1h-1zM19,10h1v1h-1zM22,10h1v1h-1zM27,10h1v1h-1zM29,10h1v1h-1zM30,10h1v1h-1zM32,10h1v1h-1zM33,10h1v1h-1zM34,10h1v1h-1zM35,10h1v1h-1zM36,10h1v1h-1zM2,11h1v1h-1zM3,11h1v1h-1zM4,11h1v1h-1zM7,11h1v1h-1zM9,11h1v1h-1zM11,11h1v1h-1zM13,11h1v1h-1zM16,11h1v1h-1zM17,11h1v1h-1zM18,11h1v1h-1zM20,11h1v1h-1zM21,11h1v1h-1zM24,11h1v1h-1zM25,11h1v1h-1zM26,11h1v1h-1zM28,11h1v1h-1zM31,11h1v1h-1zM37,11h1v1h-1zM3,12h1v1h-1zM4,12h1v1h-1zM5,12h1v1h-1zM8,12h1v1h-1zM11,12h1v1h-1zM15,12h1v1h-1zM16,12h1v1h-1zM20,12h1v1h-1zM23,12h1v1h-1zM24,12h1v1h-1zM26,12h1v1h-1zM27,12h1v1h-1zM28,12h1v1h-1zM29,12h1v1h-1zM32,12h1v1h-1zM34,12h1v1h-1zM35,12h1v1h-1zM37,12h1v1h-1zM38,12h1v1h-1zM2,13h1v1h-1zM4,13h1v1h-1zM5,13h1v1h-1zM7,13h1v1h-1zM11,13h1v1h-1zM14,13h1v1h-1zM16,13h1v1h-1zM18,13h1v1h-1zM21,13h1v1h-1zM23,13h1v1h-1zM24,13h1v1h-1zM25,13h1v1h-1zM26,13h1v1h-1zM29,13h1v1h-1zM31,13h1v1h-1zM32,13h1v1h-1zM35,13h1v1h-1zM38,13h1v1h-1zM4,14h1v1h-1zM5,14h1v1h-1zM8,14h1v1h-1zM11,14h1v1h-1zM13,14h1v1h-1zM14,14h1v1h-1zM15,14h1v1h-1zM19,14h1v1h-1zM22,14h1v1h-1zM26,14h1v1h-1zM27,14h1v1h-1zM28,14h1v1h-1zM29,14h1v1h-1zM30,14h1v1h-1zM31,14h1v1h-1zM32,14h1v1h-1zM34,14h1v1h-1zM36,14h1v1h-1zM37,14h1v1h-1zM38,14h1v1h-1zM3,15h1v1h-1zM5,15h1v1h-1zM6,15h1v1h-1zM7,15h1v1h-1zM9,15h1v1h-1zM10,15h1v1h-1zM13,15h1v1h-1zM14,15h1v1h-1zM15,15h1v1h-1zM20,15h1v1h-1zM21,15h1v1h-1zM25,15h1v1h-1zM30,15h1v1h-1zM31,15h1v1h-1zM33,15h1v1h-1zM37,15h1v1h-1zM2,16h1v1h-1zM3,16h1v1h-1zM6,16h1v1h-1zM8,16h1v1h-1zM10,16h1v1h-1zM15,16h1v1h-1zM17,16h1v1h-1zM23,16h1v1h-1zM24,16h1v1h-1zM26,16h1v1h-1zM28,16h1v1h-1zM29,16h1v1h-1zM30,16h1v1h-1zM32,16h1v1h-1zM33,16h1v1h-1zM34,16h1v1h-1zM35,16h1v1h-1zM38,16h1v1h-1zM2,17h1v1h-1zM5,17h1v1h-1zM6,17h1v1h-1zM7,17h1v1h-1zM10,17h1v1h-1zM12,17h1v1h-1zM13,17h1v1h-1zM14,17h1v1h-1zM16,17h1v1h-1zM20,17h1v1h-1zM21,17h1v1h-1zM22,17h1v1h-1zM23,17h1v1h-1zM24,17h1v1h-1zM25,17h1v1h-1zM28,17h1v1h-1zM30,17h1v1h-1zM31,17h1v1h-1zM33,17h1v1h-1zM34,17h1v1h-1zM37,17h1v1h-1zM38,17h1v1h-1zM5,18h1v1h-1zM6,18h1v1h-1zM7,18h1v1h-1zM8,18h1v1h-1zM9,18h1v1h-1zM10,18h1v1h-1zM12,18h1v1h-1zM14,18h1v1h-1zM16,18h1v1h-1zM17,18h1v1h-1zM19,18h1v1h-1zM22,18h1v1h-1zM24,18h1v1h-1zM25,18h1v1h-1zM26,18h1v1h-1zM27,18h1v1h-1zM30,18h1v1h-1zM31,18h1v1h-1zM32,18h1v1h-1zM34,18h1v1h-1zM36,18h1v1h-1zM37,18h1v1h-1zM38,18h1v1h-1zM2,19h1v1h-1zM3,19h1v1h-1zM5,19h1v1h-1zM9,19h1v1h-1zM13,19h1v1h-1zM14,19h1v1h-1zM16,19h1v1h-1zM17,19h1v1h-1zM21,19h1v1h-1zM22,19h1v1h-1zM25,19h1v1h-1zM27,19h1v1h-1zM28,19h1v1h-1zM33,19h1v1h-1zM35,19h1v1h-1zM37,19h1v1h-1zM3,20h1v1h-1zM4,20h1v1h-1zM5,20h1v1h-1zM6,20h1v1h-1zM8,20h1v1h-1zM10,20h1v1h-1zM11,20h1v1h-1zM12,20h1v1h-1zM13,20h1v1h-1zM14,20h1v1h-1zM15,20h1v1h-1zM17,20h1v1h-1zM24,20h1v1h-1zM26,20h1v1h-1zM27,20h1v1h-1zM28,20h1v1h-1zM29,20h1v1h-1zM30,20h1v1h-1zM32,20h1v1h-1zM33,20h1v1h-1zM37,20h1v1h-1zM38,20h1v1h-1zM4,21h1v1h-1zM6,21h1v1h-1zM7,21h1v1h-1zM15,21h1v1h-1zM20,21h1v1h-1zM21,21h1v1h-1zM22,21h1v1h-1zM23,21h1v1h-1zM24,21h1v1h-1zM28,21h1v1h-1zM32,21h1v1h-1zM35,21h1v1h-1zM38,21h1v1h-1zM2,22h1v1h-1zM3,22h1v1h-1zM4,22h1v1h-1zM5,22h1v1h-1zM6,22h1v1h-1zM8,22h1v1h-1zM11,22h1v1h-1zM12,22h1v1h-1zM14,22h1v1h-1zM16,22h1v1h-1zM17,22h1v1h-1zM18,22h1v1h-1zM19,22h1v1h-1zM22,22h1v1h-1zM24,22h1v1h-1zM26,22h1v1h-1zM27,22h1v1h-1zM28,22h1v1h-1zM29,22h1v1h-1zM31,22h1v1h-1zM32,22h1v1h-1zM34,22h1v1h-1zM36,22h1v1h-1zM3,23h1v1h-1zM4,23h1v1h-1zM9,23h1v1h-1zM10,23h1v1h-1zM11,23h1v1h-1zM12,23h1v1h-1zM16,23h1v1h-1zM18,23h1v1h-1zM21,23h1v1h-1zM22,23h1v1h-1zM25,23h1v1h-1zM26,23h1v1h-1zM28,23h1v1h-1zM30,23h1v1h-1zM35,23h1v1h-1zM3,24h1v1h-1zM5,24h1v1h-1zM8,24h1v1h-1zM10,24h1v1h-1zM11,24h1v1h-1zM13,24h1v1h-1zM14,24h1v1h-1zM15,24h1v1h-1zM16,24h1v1h-1zM17,24h1v1h-1zM18,24h1v1h-1zM19,24h1v1h-1zM22,24h1v1h-1zM23,24h1v1h-1zM24,24h1v1h-1zM27,24h1v1h-1zM29,24h1v1h-1zM32,24h1v1h-1zM33,24h1v1h-1zM34,24h1v1h-1zM35,24h1v1h-1zM37,24h1v1h-1zM38,24h1v1h-1zM3,25h1v1h-1zM5,25h1v1h-1zM7,25h1v1h-1zM9,25h1v1h-1zM12,25h1v1h-1zM14,25h1v1h-1zM17,25h1v1h-1zM18,25h1v1h-1zM20,25h1v1h-1zM21,25h1v1h-1zM22,25h1v1h-1zM23,25h1v1h-1zM25,25h1v1h-1zM26,25h1v1h-1zM28,25h1v1h-1zM29,25h1v1h-1zM33,25h1v1h-1zM34,25h1v1h-1zM37,25h1v1h-1zM38,25h1v1h-1zM3,26h1v1h-1zM8,26h1v1h-1zM9,26h1v1h-1zM12,26h1v1h-1zM14,26h1v1h-1zM16,26h1v1h-1zM17,26h1v1h-1zM18,26h1v1h-1zM19,26h1v1h-1zM21,26h1v1h-1zM24,26h1v1h-1zM26,26h1v1h-1zM27,26h1v1h-1zM29,26h1v1h-1zM32,26h1v1h-1zM34,26h1v1h-1zM36,26h1v1h-1zM37,26h1v1h-1zM38,26h1v1h-1zM2,27h1v1h-1zM3,27h1v1h-1zM6,27h1v1h-1zM7,27h1v1h-1zM10,27h1v1h-1zM11,27h1v1h-1zM13,27h1v1h-1zM18,27h1v1h-1zM20,27h1v1h-1zM21,27h1v1h-1zM23,27h1v1h-1zM25,27h1v1h-1zM28,27h1v1h-1zM30,27h1v1h-1zM31,27h1v1h-1zM33,27h1v1h-1zM2,28h1v1h-1zM4,28h1v1h-1zM6,28h1v1h-1zM8,28h1v1h-1zM12,28h1v1h-1zM14,28h1v1h-1zM15,28h1v1h-1zM17,28h1v1h-1zM18,28h1v1h-1zM19,28h1v1h-1zM22,28h1v1h-1zM23,28h1v1h-1zM26,28h1v1h-1zM29,28h1v1h-1zM37,28h1v1h-1zM38,28h1v1h-1zM2,29h1v1h-1zM7,29h1v1h-1zM9,29h1v1h-1zM12,29h1v1h-1zM14,29h1v1h-1zM15,29h1v1h-1zM16,29h1v1h-1zM17,29h1v1h-1zM18,29h1v1h-1zM20,29h1v1h-1zM21,29h1v1h-1zM23,29h1v1h-1zM24,29h1v1h-1zM31,29h1v1h-1zM32,29h1v1h-1zM33,29h1v1h-1zM35,29h1v1h-1zM37,29h1v1h-1zM2,30h1v1h-1zM4,30h1v1h-1zM5,30h1v1h-1zM6,30h1v1h-1zM7,30h1v1h-1zM8,30h1v1h-1zM9,30h1v1h-1zM13,30h1v1h-1zM14,30h1v1h-1zM15,30h1v1h-1zM16,30h1v1h-1zM17,30h1v1h-1zM19,30h1v1h-1zM21,30h1v1h-1zM24,30h1v1h-1zM27,30h1v1h-1zM28,30h1v1h-1zM29,30h1v1h-1zM30,30h1v1h-1zM31,30h1v1h-1zM32,30h1v1h-1zM33,30h1v1h-1zM34,30h1v1h-1zM36,30h1v1h-1zM38,30h1v1h-1zM10,31h1v1h-1zM12,31h1v1h-1zM14,31h1v1h-1zM18,31h1v1h-1zM19,31h1v1h-1zM20,31h1v1h-1zM21,31h1v1h-1zM24,31h1v1h-1zM25,31h1v1h-1zM30,31h1v1h-1zM34,31h1v1h-1zM35,31h1v1h-1zM37,31h1v1h-1zM2,32h1v1h-1zM3,32h1v1h-1zM4,32h1v1h-1zM5,32h1v1h-1zM6,32h1v1h-1zM7,32h1v1h-1zM8,32h1v1h-1zM17,32h1v1h-1zM18,32h1v1h-1zM20,32h1v1h-1zM22,32h1v1h-1zM23,32h1v1h-1zM27,32h1v1h-1zM30,32h1v1h-1zM32,32h1v1h-1zM34,32h1v1h-1zM36,32h1v1h-1zM38,32h1v1h-1zM2,33h1v1h-1zM8,33h1v1h-1zM10,33h1v1h-1zM11,33h1v1h-1zM14,33h1v1h-1zM15,33h1v1h-1zM23,33h1v1h-1zM24,33h1v1h-1zM28,33h1v1h-1zM30,33h1v1h-1zM34,33h1v1h-1zM35,33h1v1h-1zM37,33h1v1h-1zM2,34h1v1h-1zM4,34h1v1h-1zM5,34h1v1h-1zM6,34h1v1h-1zM8,34h1v1h-1zM10,34h1v1h-1zM12,34h1v1h-1zM14,34h1v1h-1zM16,34h1v1h-1zM17,34h1v1h-1zM19,34h1v1h-1zM21,34h1v1h-1zM24,34h1v1h-1zM27,34h1v1h-1zM29,34h1v1h-1zM30,34h1v1h-1zM31,34h1v1h-1zM32,34h1v1h-1zM33,34h1v1h-1zM34,34h1v1h-1zM36,34h1v1h-1zM37,34h1v1h-1zM2,35h1v1h-1zM4,35h1v1h-1zM5,35h1v1h-1zM6,35h1v1h-1zM8,35h1v1h-1zM10,35h1v1h-1zM11,35h1v1h-1zM12,35h1v1h-1zM15,35h1v1h-1zM16,35h1v1h-1zM18,35h1v1h-1zM19,35h1v1h-1zM21,35h1v1h-1zM22,35h1v1h-1zM23,35h1v1h-1zM25,35h1v1h-1zM26,35h1v1h-1zM27,35h1v1h-1zM28,35h1v1h-1zM29,35h1v1h-1zM30,35h1v1h-1zM32,35h1v1h-1zM34,35h1v1h-1zM37,35h1v1h-1zM38,35h1v1h-1zM2,36h1v1h-1zM4,36h1v1h-1zM5,36h1v1h-1zM6,36h1v1h-1zM8,36h1v1h-1zM10,36h1v1h-1zM12,36h1v1h-1zM16,36h1v1h-1zM17,36h1v1h-1zM18,36h1v1h-1zM20,36h1v1h-1zM23,36h1v1h-1zM28,36h1v1h-1zM30,36h1v1h-1zM35,36h1v1h-1zM36,36h1v1h-1zM37,36h1v1h-1zM38,36h1v1h-1zM2,37h1v1h-1zM8,37h1v1h-1zM11,37h1v1h-1zM14,37h1v1h-1zM15,37h1v1h-1zM21,37h1v1h-1zM22,37h1v1h-1zM23,37h1v1h-1zM26,37h1v1h-1zM29,37h1v1h-1zM30,37h1v1h-1zM32,37h1v1h-1zM34,37h1v1h-1zM35,37h1v1h-1zM38,37h1v1h-1zM2,38h1v1h-1zM3,38h1v1h-1zM4,38h1v1h-1zM5,38h1v1h-1zM6,38h1v1h-1zM7,38h1v1h-1zM8,38h1v1h-1zM10,38h1v1h-1zM12,38h1v1h-1zM13,38h1v1h-1zM15,38h1v1h-1zM17,38h1v1h-1zM18,38h1v1h-1zM19,38h1v1h-1zM21,38h1v1h-1zM24,38h1v1h-1zM25,38h1v1h-1zM27,38h1v1h-1zM28,38h1v1h-1zM31,38h1v1h-1zM32,38h1v1h-1zM34,38h1v1h-1zM36,38h1v1h-1zM37,38h1v1h-1zM38,38h1v1h-1z" fill="#000"/></svg></div>
+    </div>
+    <p class="mk-copy">© <span class="mk-year">2026</span> Michael Koo Protection Alliance (MKPA). 版權所有。</p>
+  </footer>
+</main>
+
+<script src="data/hospitals.js"></script>
+<script src="js/app.js"></script>
+<script>
+(function(){var d=new Date();
+document.querySelectorAll('.mk-year').forEach(function(e){e.textContent=d.getFullYear();});
+document.querySelectorAll('.mk-print-date').forEach(function(e){e.textContent=d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日';});})();
+</script>
 </body>
 </html>

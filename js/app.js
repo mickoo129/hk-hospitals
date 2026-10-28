@@ -1,138 +1,268 @@
+/* 香港醫院指南 */
 (function(){
-const SPEC_CHIPS=["內科","外科","骨科","兒科","婦科","眼科","耳鼻喉科","精神科","急症科","復康","腫瘤科","家庭醫學"];
-const REGION_EN={"港島":"HK Island","九龍":"Kowloon","新界":"N.T."};
-const state={lang:localStorage.getItem("hkHospLang")||"tc",view:"list",q:"",sectors:[],regions:[],specs:[],ae:false,nearby:false,loc:null,sel:null,places:[]};
-function toggle(arr,v){const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);}
-function km(a,b){const R=6371,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180;const s=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(s));}
-function askLoc(){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(p=>{state.loc={lat:p.coords.latitude,lng:p.coords.longitude};paint();},()=>{state.nearby=false;paint();},{timeout:8000});}
-const $=s=>document.querySelector(s);
-function name(p){return state.lang==="tc"?p.tc:p.en;}
-function region(p){return state.lang==="en"?(REGION_EN[p.region]||p.region):p.region;}
-function addr(p){return state.lang==="en"?(p.addrEn||p.addr||""):(p.addrTc||p.addr||"");}
-function specTxt(p){
-  const raw=String(p.specsTc||p.specs||p.specsEn||"");
-  if(raw.indexOf("請向")>=0||raw.indexOf("Please confirm")>=0){
-    return state.lang==="en"?"Please confirm specialties with the hospital":"請向院方查詢確實專科";
+"use strict";
+var H = window.HOSPITALS || [];
+var REGIONS = ["港島","九龍","新界","離島"];
+var TYPES = [["","全部"],["public","公立"],["private","私家"],["cm","中醫醫院"]];
+var TYPE_NAME = {public:"公立",private:"私家",cm:"中醫醫院"};
+var KIND_ORDER = ["綜合醫院","專科醫院","專科中心","中醫醫院","復康／療養","紓緩治療","護養院"];
+var $ = function(id){ return document.getElementById(id); };
+
+var st = {q:"",r:"",d:"",s:"",t:"",ae:false,sopc:false,acute:false,sort:"area"};
+var here = null;      // {lat,lng}
+var waits = {};       // 醫院名 → {t3, t45, t45n, time}
+var waitTime = "";
+
+/* ---------- 工具 ---------- */
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function norm(s){ return String(s || "").replace(/[\s　()（）\-–—．.]/g,"").toLowerCase(); }
+function km(a, b){
+  var R = 6371, toR = Math.PI/180;
+  var dLa = (b.lat-a.lat)*toR, dLo = (b.lng-a.lng)*toR;
+  var x = Math.sin(dLa/2)*Math.sin(dLa/2) + Math.cos(a.lat*toR)*Math.cos(b.lat*toR)*Math.sin(dLo/2)*Math.sin(dLo/2);
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+function mapQuery(h){ return h.name + " " + h.addr; }
+function gmapLink(h){ return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(mapQuery(h)); }
+function gmapEmbed(h){ return "https://maps.google.com/maps?q=" + encodeURIComponent(mapQuery(h)) + "&hl=zh-TW&z=16&output=embed"; }
+var I = {
+  pin:'<svg viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+  tel:'<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
+  web:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  map:'<svg viewBox="0 0 24 24"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>',
+  go:'<svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></svg>'
+};
+
+/* ---------- 網址狀態（方便分享篩選結果） ---------- */
+function readHash(){
+  var p = new URLSearchParams(location.hash.replace(/^#/,""));
+  st.q = p.get("q") || ""; st.r = p.get("r") || ""; st.d = p.get("d") || "";
+  st.s = p.get("s") || ""; st.t = p.get("t") || "";
+  st.ae = p.get("ae") === "1"; st.sopc = p.get("sopc") === "1"; st.acute = p.get("acute") === "1";
+  st.sort = p.get("sort") || "area";
+  if (REGIONS.indexOf(st.r) < 0) st.r = "";
+  if (window.SPECS.indexOf(st.s) < 0) st.s = "";
+}
+function writeHash(){
+  var p = new URLSearchParams();
+  if (st.q) p.set("q", st.q); if (st.r) p.set("r", st.r); if (st.d) p.set("d", st.d);
+  if (st.s) p.set("s", st.s); if (st.t) p.set("t", st.t);
+  if (st.ae) p.set("ae","1"); if (st.sopc) p.set("sopc","1"); if (st.acute) p.set("acute","1");
+  if (st.sort !== "area") p.set("sort", st.sort);
+  var h = p.toString();
+  history.replaceState(null, "", h ? "#" + h : location.pathname + location.search);
+}
+
+/* ---------- 篩選介面 ---------- */
+function seg(el, items, cur, onPick){
+  el.innerHTML = items.map(function(it){
+    return '<button type="button" data-v="' + esc(it[0]) + '"' + (it[0] === cur ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"') + '>' + esc(it[1]) + '</button>';
+  }).join("");
+  el.onclick = function(e){ var b = e.target.closest("button"); if (b) onPick(b.getAttribute("data-v")); };
+}
+function districtsOf(r){
+  var out = [];
+  H.forEach(function(h){ if ((!r || h.region === r) && out.indexOf(h.district) < 0) out.push(h.district); });
+  return out.sort(function(a,b){ return a.localeCompare(b, "zh-HK"); });
+}
+function syncControls(){
+  $("q").value = st.q;
+  seg($("fRegion"), [["","全部"]].concat(REGIONS.map(function(r){ return [r, r]; })), st.r, function(v){ st.r = v; if (st.d && districtsOf(v).indexOf(st.d) < 0) st.d = ""; update(); });
+  seg($("fType"), TYPES, st.t, function(v){ st.t = v; update(); });
+  var ds = districtsOf(st.r);
+  if (ds.indexOf(st.d) < 0) st.d = "";
+  $("fDistrict").innerHTML = '<option value="">全部地區</option>' + ds.map(function(d){ return '<option' + (d === st.d ? " selected" : "") + '>' + esc(d) + '</option>'; }).join("");
+  $("fSpec").innerHTML = '<option value="">全部專科</option>' + window.SPECS.map(function(s){ return '<option' + (s === st.s ? " selected" : "") + '>' + esc(s) + '</option>'; }).join("");
+  $("fAe").checked = st.ae; $("fSopc").checked = st.sopc; $("fAcute").checked = st.acute;
+  $("fSort").value = st.sort;
+}
+
+/* ---------- 篩選 + 排序 ---------- */
+function match(h){
+  if (st.r && h.region !== st.r) return false;
+  if (st.d && h.district !== st.d) return false;
+  if (st.t && h.type !== st.t) return false;
+  if (st.s && h.specs.indexOf(st.s) < 0) return false;
+  if (st.ae && !h.ae) return false;
+  if (st.sopc && !h.sopc) return false;
+  if (st.acute && h.kind !== "綜合醫院") return false;
+  if (st.q){
+    var hay = norm([h.name, h.en, h.region, h.district, h.cluster, h.addr, h.kind, h.specs.join(" "), TYPE_NAME[h.type]].join(" "));
+    var words = st.q.trim().split(/\s+/);
+    for (var i = 0; i < words.length; i++) if (hay.indexOf(norm(words[i])) < 0) return false;
   }
-  if(state.lang==="en") return p.specsEn&&p.specsEn.indexOf("請向")<0?p.specsEn:(window.specToEn?window.specToEn(p.specsTc||p.specs||""):raw);
-  return p.specsTc||p.specs||"";
+  return true;
 }
-function goodWeb(u){
-  if(!u||!/^https?:\/\//i.test(u)) return "";
-  const t=u.replace(/\/$/,"");
-  if(t==="https://www.ha.org.hk"||u.indexOf("Content_ID=10036")>=0) return "";
-  return u;
+function waitOf(h){ var w = h.ae && waits[norm(h.aeName || "")] || waits[norm(h.en)]; return w || null; }
+function sortList(list){
+  var typeO = {public:0, cm:1, private:2};
+  function area(a, b){
+    return REGIONS.indexOf(a.region) - REGIONS.indexOf(b.region)
+      || a.district.localeCompare(b.district, "zh-HK")
+      || typeO[a.type] - typeO[b.type]
+      || (b.ae - a.ae)
+      || KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind)
+      || a.name.localeCompare(b.name, "zh-HK");
+  }
+  if (st.sort === "near" && here){
+    list.forEach(function(h){ h._km = km(here, h); });
+    return list.sort(function(a,b){ return a._km - b._km; });
+  }
+  if (st.sort === "wait"){
+    return list.sort(function(a,b){
+      var wa = waitOf(a), wb = waitOf(b);
+      var va = wa && wa.t45n != null ? wa.t45n : Infinity, vb = wb && wb.t45n != null ? wb.t45n : Infinity;
+      return va - vb || area(a, b);
+    });
+  }
+  return list.sort(area);
 }
-function specBag(p){return (p.specsTc||"")+" "+(p.specs||"")+" "+(p.specsEn||"");}
-function filtered(){
-  const q=state.q.trim().toLowerCase();
-  const list=state.places.filter(p=>{
-    if(state.sectors.length){
-      const ok=(state.sectors.indexOf("pub")>=0&&p.pub)||(state.sectors.indexOf("pri")>=0&&!p.pub)||(state.sectors.indexOf("sop")>=0&&p.kind==="sop");
-      if(!ok)return false;
+
+/* ---------- 畫卡片 ---------- */
+function card(h){
+  var w = waitOf(h);
+  var typeCls = h.type === "public" ? "b-pub" : h.type === "private" ? "b-pri" : "b-cm";
+  var b = '<span class="bdg ' + typeCls + '">' + TYPE_NAME[h.type] + '</span>';
+  if (h.ae) b += '<span class="bdg b-ae">' + (h.type === "public" ? "急症室 24 小時" : "24 小時門診／急症") + '</span>';
+  if (h.sopc) b += '<span class="bdg b-sopc">' + (h.type === "public" ? "專科門診（需轉介）" : "專科門診") + '</span>';
+  b += '<span class="bdg b-kind">' + esc(h.kind) + '</span>';
+
+  var wait = "";
+  if (h.ae && h.type === "public" && w){
+    wait = '<div class="wait"><small class="wl">急症室等候時間（一半病人會喺以下時間內睇到醫生）</small>' +
+      '<span class="wv">次緊急／非緊急 <b>' + esc(w.t45) + '</b></span>' +
+      (w.t3 ? '<span class="wv">緊急 <b>' + esc(w.t3) + '</b></span>' : '') + '<small>醫管局即時數據 · 更新 ' + esc(w.time || waitTime) + '</small></div>';
+  }
+  var specs = h.specs.length ? '<div class="specs">' + h.specs.map(function(s){ return '<span class="sp' + (s === st.s ? " on" : "") + '">' + esc(s) + '</span>'; }).join("") + '</div>' : "";
+  var dist = (st.sort === "near" && here && h._km != null) ? '<span class="dist">約 ' + (h._km < 10 ? h._km.toFixed(1) : Math.round(h._km)) + ' 公里</span>' : "";
+  var meta = esc(h.region) + ' · ' + esc(h.district) + (h.cluster ? ' · 醫管局' + esc(h.cluster) + '聯網' : '');
+
+  return '<article class="card" id="h-' + esc(h.id) + '">' +
+    '<div class="c-head"><h2 class="c-name">' + esc(h.name) + '<span class="c-en">' + esc(h.en) + '</span></h2>' + dist + '</div>' +
+    '<div class="c-meta">' + meta + '</div>' +
+    '<div class="badges">' + b + '</div>' + wait + specs +
+    '<div class="info">' +
+      '<div>' + I.pin + '<span>' + esc(h.addr) + '</span></div>' +
+      '<div>' + I.tel + '<a href="tel:' + esc(h.phone.replace(/\s/g,"")) + '">' + esc(h.phone) + '</a></div>' +
+      (h.opd ? '<div>' + I.clock + '<span>' + esc(h.opd) + '</span></div>' : '') +
+    '</div>' +
+    (h.note ? '<p class="note">' + esc(h.note) + '</p>' : '') +
+    '<div class="acts">' +
+      '<a class="act pri" href="tel:' + esc(h.phone.replace(/\s/g,"")) + '">' + I.tel + '致電</a>' +
+      '<button type="button" class="act" data-map="' + esc(h.id) + '" aria-expanded="false">' + I.map + '顯示地圖</button>' +
+      '<a class="act" href="' + gmapLink(h) + '" target="_blank" rel="noopener">' + I.go + 'Google 地圖</a>' +
+      (h.web ? '<a class="act" href="' + esc(h.web) + '" target="_blank" rel="noopener">' + I.web + '網站</a>' : '') +
+    '</div></article>';
+}
+
+function summary(n){
+  var tags = [];
+  if (st.r) tags.push(st.r); if (st.d) tags.push(st.d); if (st.t) tags.push(TYPE_NAME[st.t]);
+  if (st.s) tags.push(st.s); if (st.ae) tags.push("24 小時急症"); if (st.sopc) tags.push("專科門診");
+  if (st.acute) tags.push("綜合醫院"); if (st.q) tags.push("「" + st.q + "」");
+  var sortTxt = st.sort === "near" ? (here ? "按距離排序" : "按距離排序（未取得位置）") : st.sort === "wait" ? "按急症室等候時間排序" : "按地區排序";
+  return '<b>' + n + '</b> 間醫院' + (tags.length ? '　' + tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join("") : '　（全部）') + '　<span>' + sortTxt + '</span>';
+}
+
+function render(){
+  var list = sortList(H.filter(match));
+  $("summary").innerHTML = summary(list.length);
+  $("list").innerHTML = list.length ? list.map(card).join("") :
+    '<div class="empty">搵唔到符合條件嘅醫院。<br>試下放寬地區或專科，或者<button type="button" class="link-btn" data-reset>清除篩選</button>。</div>';
+}
+function update(){ writeHash(); syncControls(); render(); }
+
+/* ---------- 地圖 ---------- */
+$("list").addEventListener("click", function(e){
+  if (e.target.closest("[data-reset]")) { reset(); return; }
+  var btn = e.target.closest("[data-map]"); if (!btn) return;
+  var c = btn.closest(".card"), m = c.querySelector(".map");
+  if (m){ m.remove(); btn.setAttribute("aria-expanded","false"); btn.lastChild.textContent = "顯示地圖"; return; }
+  var h = H.filter(function(x){ return x.id === btn.getAttribute("data-map"); })[0];
+  var div = document.createElement("div"); div.className = "map";
+  div.innerHTML = '<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="' + esc(h.name) + '地圖" src="' + gmapEmbed(h) + '"></iframe>';
+  c.querySelector(".acts").before(div);
+  btn.setAttribute("aria-expanded","true"); btn.lastChild.textContent = "收起地圖";
+});
+
+/* ---------- 位置 ---------- */
+function locate(done){
+  if (here) { done(true); return; }
+  if (!navigator.geolocation) { done(false); return; }
+  $("summary").innerHTML = "正在取得你嘅位置…";
+  navigator.geolocation.getCurrentPosition(function(p){
+    here = {lat:p.coords.latitude, lng:p.coords.longitude}; done(true);
+  }, function(){ done(false); }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
+}
+function useNear(fallback){
+  locate(function(ok){
+    if (!ok){
+      st.sort = fallback || "area";
+      update();
+      $("aedInfo").textContent = "未能取得位置（可能未允許定位）。" + (st.sort === "wait" ? "已改為按急症室等候時間排序。" : "");
+      return;
     }
-    if(state.regions.length&&state.regions.indexOf(p.region)<0)return false;
-    if(state.ae&&!p.ae)return false;
-    if(state.specs.length&&!state.specs.some(s=>specBag(p).indexOf(s)>=0))return false;
-    if(q){
-      const bag=(p.tc+" "+p.en+" "+addr(p)+" "+specBag(p)+" "+(p.addrEn||"")).toLowerCase();
-      if(bag.indexOf(q)<0)return false;
-    }
-    return true;
-  }).map(p=>state.loc?Object.assign({},p,{_km:km(state.loc,{lat:p.lat,lng:p.lng})}):p);
-  if(state.nearby&&state.loc) list.sort((a,b)=>(a._km||99)-(b._km||99));
-  return list;
-}
-function chip(label,on,fn){const b=document.createElement("button");b.type="button";b.className="chip"+(on?" on":"");b.textContent=label;b.onclick=fn;return b;}
-function filters(){
-  const el=$("#filters"); if(!el)return; el.innerHTML="";
-  const L=state.lang==="tc";
-  function row(title){const w=document.createElement("div");w.className="filter-row";const lab=document.createElement("div");lab.className="filter-label";lab.textContent=title;const chips=document.createElement("div");chips.className="filter-chips";w.appendChild(lab);w.appendChild(chips);el.appendChild(w);return chips;}
-  function add(box,label,on,fn){box.appendChild(chip(label,on,fn));}
-  const r1=row(L?"分類（可多選）":"Type (multi-select)");
-  add(r1,L?"附近":"Nearby",state.nearby,()=>{state.nearby=!state.nearby;if(state.nearby&&!state.loc)askLoc();else paint();});
-  add(r1,L?"公立":"Public",state.sectors.indexOf("pub")>=0,()=>{toggle(state.sectors,"pub");paint();});
-  add(r1,L?"私家":"Private",state.sectors.indexOf("pri")>=0,()=>{toggle(state.sectors,"pri");paint();});
-  add(r1,L?"專科門診":"SOP",state.sectors.indexOf("sop")>=0,()=>{toggle(state.sectors,"sop");paint();});
-  add(r1,L?"急症 / 24小時":"A&E / 24h",state.ae,()=>{state.ae=!state.ae;paint();});
-  add(r1,L?"重設":"Reset",false,()=>{state.sectors=[];state.regions=[];state.specs=[];state.ae=false;state.nearby=false;paint();});
-  const r2=row(L?"地區（可多選）":"Area (multi-select)");
-  [["港島",L?"港島":"HK Island"],["九龍",L?"九龍":"Kowloon"],["新界",L?"新界":"N.T."]].forEach(([v,lab])=>add(r2,lab,state.regions.indexOf(v)>=0,()=>{toggle(state.regions,v);paint();}));
-  const r3=row(L?"專科（可多選）":"Specialty (multi-select)");
-  SPEC_CHIPS.forEach(s=>add(r3,(L?s:((window.SPEC_EN&&SPEC_EN[s])||s)),state.specs.indexOf(s)>=0,()=>{toggle(state.specs,s);paint();}));
-}
-function actions(p){
-  const tel=p.phone?("tel:"+p.phone.replace(/\s/g,"")):"";
-  const maps="https://maps.apple.com/?ll="+p.lat+","+p.lng+"&q="+encodeURIComponent(name(p));
-  const site=goodWeb(p.web);
-  const L=state.lang==="tc";
-  const call=p.phone?('<a class="btn" href="'+tel+'">'+ (L?"致電":"Call")+"</a>"):("");
-  const mapBtn='<a class="btn ghost" href="'+maps+'" target="_blank" rel="noopener">'+(L?"地圖":"Map")+"</a>";
-  const siteBtn=site?('<a class="btn ghost" href="'+site+'" target="_blank" rel="noopener">'+(L?"網站":"Site")+"</a>"):"";
-  return '<div class="actions" onclick="event.stopPropagation()">'+call+mapBtn+siteBtn+"</div>";
-}
-function tags(p){
-  const L=state.lang==="tc";
-  return '<div class="tags"><span class="tag '+(p.pub?"pub":"pri")+'">'+(p.pub?(L?"公立":"Public"):(L?"私家":"Private"))+'</span>'+(p.ae?'<span class="tag ae">'+(L?"急症":"A&E")+"</span>":"")+(p.kind==="sop"?'<span class="tag">'+(L?"專科門診":"SOP")+"</span>":"")+"</div>";
-}
-function renderList(){
-  const rows=filtered(); const root=$("#view");
-  if(!rows.length){root.innerHTML='<div class="empty">'+(state.lang==="tc"?"沒有符合條件的結果。":"No matching results.")+"</div>";return;}
-  root.innerHTML='<div class="section-title">'+rows.length+'</div><div class="card-list"></div>';
-  const wrap=root.querySelector(".card-list");
-  rows.forEach(p=>{
-    const b=document.createElement("button"); b.type="button"; b.className="place-card";
-    const dist=p._km!=null?'<span class="km"> · '+p._km.toFixed(1)+(state.lang==="tc"?" 公里":" km")+"</span>":"";
-    b.innerHTML='<div class="place-name">'+name(p)+'</div><div class="place-meta">'+region(p)+dist+" · "+addr(p)+'</div>'+tags(p)+'<div class="place-meta" style="margin-top:8px">'+specTxt(p)+"</div>"+actions(p);
-    b.onclick=()=>{state.sel=p.id;state.view="detail";paint();};
-    wrap.appendChild(b);
+    update();
   });
 }
-function renderDetail(){
-  const p=state.places.find(x=>x.id===state.sel); const root=$("#view");
-  if(!p){state.view="list";renderList();return;}
-  const L=state.lang==="tc";
-  const cluster=L?p.cluster:(p.clusterEn||p.cluster);
-  root.innerHTML='<button class="back" id="backBtn" type="button">‹ '+(L?"返回":"Back")+'</button><article class="detail"><div class="detail-hero"><h2>'+name(p)+"</h2><div class=\"place-meta\" style=\"margin-top:8px\">"+(L?p.en:p.tc)+"</div>"+tags(p)+actions(p)+'</div><ul class="kv"><li><span>'+(L?"類別":"Type")+"</span><span>"+(p.pub?(L?"公立":"Public"):(L?"私家":"Private"))+"</span></li><li><span>"+(L?"醫院聯網":"Cluster")+"</span><span>"+cluster+"</span></li><li><span>"+(L?"地址":"Address")+"</span><span>"+addr(p)+"</span></li><li><span>"+(L?"電話":"Phone")+"</span><span>"+(p.phone||(L?"未有公開電話":"Not listed"))+"</span></li><li><span>"+(L?"急症室":"A&E")+"</span><span>"+(p.ae?(L?"有":"Yes"):(L?"沒有":"No"))+"</span></li><li><span>"+(L?"專科":"Specialties")+"</span><span>"+(specTxt(p)||"—")+"</span></li></ul><div class=\"notice\">"+(L?"專科名單為公開資料整理，實際門診以院方公布為準。危急請致電 999。":"Specialty list is compiled from public information. Call 999 in an emergency.")+"</div></article>";
-  $("#backBtn").onclick=()=>{state.view="list";state.sel=null;paint();};
+
+/* ---------- 急症室即時等候時間 ---------- */
+function fmt(v, unit){
+  if (v == null || v === "") return "";
+  var s = String(v).trim();
+  return /^[\d.]+$/.test(s) ? s + " " + unit : s;
 }
-function renderMap(){
-  $("#view").innerHTML='<div id="map"></div>';
-  const map=L.map("map").setView([22.35,114.15],11);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(map);
-  const b=[];
-  filtered().forEach(p=>{if(p.lat==null)return;b.push([p.lat,p.lng]);L.marker([p.lat,p.lng]).addTo(map).bindPopup("<b>"+name(p)+"</b><br>"+addr(p)+"<br>"+specTxt(p));});
-  if(state.loc) L.circleMarker([state.loc.lat,state.loc.lng],{radius:7,color:"#0b8a6e",fillOpacity:1}).addTo(map);
-  if(b.length)map.fitBounds(b,{padding:[24,24],maxZoom:13});
-  setTimeout(()=>map.invalidateSize(),80);
+function toHours(v){
+  if (v == null) return null;
+  var s = String(v), n = parseFloat(s.replace(/[^\d.]/g,""));
+  if (isNaN(n)) return null;
+  if (/分鐘|min/i.test(s)) n = n / 60;
+  if (/少於|<|&lt;/.test(s)) n = n - 0.01;
+  return n;
 }
-function renderAbout(){
-  const L=state.lang==="tc";
-  $("#view").innerHTML='<article class="detail"><div class="detail-hero"><h2>'+(L?"說明":"About")+'</h2></div><div class="block"><p style="margin:0;line-height:1.6">'+(L?"用專科篩選找出有該服務的醫院，再用「附近」按距離排序。危急請致電 999。":"Filter by specialty, then Nearby. Call 999 in an emergency.")+"</p></div></article>";
-}
-function paint(){
-  document.documentElement.lang=state.lang==="tc"?"zh-Hant-HK":"en";
-  $("#title").textContent=state.lang==="tc"?"香港醫院指南":"Hong Kong Hospitals";
-  $("#subtitle").textContent=state.lang==="tc"?"按專科查詢 · 附近醫院":"Find by specialty · Nearby";
-  $("#search").placeholder=state.lang==="tc"?"搜尋醫院、診所或專科":"Search hospital, clinic or specialty";
-  $("#btnTc").classList.toggle("on",state.lang==="tc");
-  $("#btnEn").classList.toggle("on",state.lang==="en");
-  const labs=state.lang==="en"?["List","Map","About"]:["目錄","地圖","說明"];
-  document.querySelectorAll(".tab span").forEach((sp,i)=>{if(labs[i])sp.textContent=labs[i];});
-  document.querySelectorAll(".tab").forEach(el=>{
-    el.classList.toggle("on",el.dataset.view===state.view||(state.view==="detail"&&el.dataset.view==="list"));
+function loadWaits(){
+  fetch("/.netlify/functions/aed", {cache:"no-store"}).then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(j){
+    var arr = Array.isArray(j) ? j : (j.waitTime || j.waitingTime || Object.keys(j).map(function(k){ return j[k]; }).filter(Array.isArray)[0] || []);
+    arr.forEach(function(x){
+      if (!x || !x.hospName) return;
+      var t45 = x.t45p50 != null ? x.t45p50 : x.topWait;
+      waits[norm(x.hospName)] = { t3: fmt(x.t3p50, "分鐘"), t45: fmt(t45, "小時"), t45n: toHours(t45), time: x.updateTime || "" };
+      if (x.updateTime) waitTime = x.updateTime;
+    });
+    if (j.updateTime) waitTime = j.updateTime;
+    if (arr.length){
+      $("aedInfo").textContent = "急症室等候時間來自醫管局即時數據（" + waitTime + "），只供參考；急症室按病情緩急次序診症，危急病人會優先處理。";
+      render();
+    }
+  }).catch(function(){
+    $("aedInfo").innerHTML = '暫時未能載入急症室即時等候時間，可用醫管局「HA Go」或<a href="https://www.ha.org.hk/" target="_blank" rel="noopener">醫管局網站</a>查看。';
   });
-  filters();
-  if(state.view==="list")renderList();
-  else if(state.view==="detail")renderDetail();
-  else if(state.view==="map")renderMap();
-  else renderAbout();
 }
-function bind(){
-  $("#search").oninput=e=>{state.q=e.target.value;if(state.view==="detail")state.view="list";paint();};
-  $("#btnTc").onclick=()=>{state.lang="tc";localStorage.setItem("hkHospLang","tc");paint();};
-  $("#btnEn").onclick=()=>{state.lang="en";localStorage.setItem("hkHospLang","en");paint();};
-  document.querySelectorAll(".tab").forEach(el=>{el.onclick=()=>{state.view=el.dataset.view;state.sel=null;paint();};});
-}
-window.state=state;window.bind=bind;window.paint=paint;
+
+/* ---------- 綁定 ---------- */
+var qTimer;
+$("q").addEventListener("input", function(e){ clearTimeout(qTimer); qTimer = setTimeout(function(){ st.q = e.target.value.trim(); writeHash(); render(); }, 150); });
+$("fDistrict").addEventListener("change", function(e){ st.d = e.target.value; update(); });
+$("fSpec").addEventListener("change", function(e){ st.s = e.target.value; update(); });
+$("fAe").addEventListener("change", function(e){ st.ae = e.target.checked; update(); });
+$("fSopc").addEventListener("change", function(e){ st.sopc = e.target.checked; update(); });
+$("fAcute").addEventListener("change", function(e){ st.acute = e.target.checked; update(); });
+$("fSort").addEventListener("change", function(e){
+  st.sort = e.target.value;
+  if (st.sort === "near") useNear("area"); else update();
+});
+function reset(){ st = {q:"",r:"",d:"",s:"",t:"",ae:false,sopc:false,acute:false,sort:"area"}; $("aedInfo").textContent = ""; update(); }
+$("btnReset").addEventListener("click", reset);
+$("btnAe").addEventListener("click", function(){
+  st = {q:"",r:"",d:"",s:"",t:"",ae:true,sopc:false,acute:false,sort:"near"};
+  useNear("wait");
+  $("summary").scrollIntoView({behavior:"smooth", block:"start"});
+});
+window.addEventListener("hashchange", function(){ readHash(); syncControls(); render(); });
+
+$("checked").textContent = window.DATA_CHECKED || "";
+readHash();
+if (st.sort === "near") st.sort = "area"; // 打開時唔自動問位置
+syncControls(); render(); loadWaits();
 })();
