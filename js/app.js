@@ -8,7 +8,9 @@ var TYPE_NAME = {public:"公立",private:"私家",cm:"中醫醫院"};
 var KIND_ORDER = ["綜合醫院","專科醫院","專科中心","中醫醫院","復康／療養","紓緩治療","護養院"];
 var $ = function(id){ return document.getElementById(id); };
 
-var st = {q:"",r:"",d:"",s:"",t:"",ae:false,sopc:false,acute:false,sort:"area"};
+function blank(){ return {v:"list",es:"near",q:"",r:"",d:"",s:"",t:"",ae:false,sopc:false,acute:false,sort:"area"}; }
+var st = blank();
+var openIds = {};   // 已展開「詳細」嘅卡片
 var here = null;      // {lat,lng}
 var waits = {};       // 醫院名 → {t3, t45, t45n, time}
 var waitTime = "";
@@ -41,6 +43,8 @@ function readHash(){
   st.s = p.get("s") || ""; st.t = p.get("t") || "";
   st.ae = p.get("ae") === "1"; st.sopc = p.get("sopc") === "1"; st.acute = p.get("acute") === "1";
   st.sort = p.get("sort") || "area";
+  st.v = p.get("v") === "er" ? "er" : "list";
+  st.es = p.get("es") === "wait" ? "wait" : "near";
   if (REGIONS.indexOf(st.r) < 0) st.r = "";
   if (window.SPECS.indexOf(st.s) < 0) st.s = "";
 }
@@ -50,6 +54,7 @@ function writeHash(){
   if (st.s) p.set("s", st.s); if (st.t) p.set("t", st.t);
   if (st.ae) p.set("ae","1"); if (st.sopc) p.set("sopc","1"); if (st.acute) p.set("acute","1");
   if (st.sort !== "area") p.set("sort", st.sort);
+  if (st.v === "er"){ p = new URLSearchParams(); p.set("v","er"); if (st.r) p.set("r", st.r); if (st.es === "wait") p.set("es","wait"); }
   var h = p.toString();
   history.replaceState(null, "", h ? "#" + h : location.pathname + location.search);
 }
@@ -67,6 +72,10 @@ function districtsOf(r){
   return out.sort(function(a,b){ return a.localeCompare(b, "zh-HK"); });
 }
 function syncControls(){
+  document.querySelectorAll("#tabs button").forEach(function(b){ var on = b.getAttribute("data-v") === st.v; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+  $("erView").hidden = st.v !== "er"; $("dirView").hidden = st.v === "er";
+  seg($("erRegion"), [["","全港"]].concat(REGIONS.map(function(r){ return [r, r]; })), st.r, function(v){ st.r = v; update(); });
+  seg($("erSortSeg"), [["near","按距離"],["wait","按等候時間"]], st.es, function(v){ st.es = v; if (v === "near") useNear(); else update(); });
   $("q").value = st.q;
   seg($("fRegion"), [["","全部"]].concat(REGIONS.map(function(r){ return [r, r]; })), st.r, function(v){ st.r = v; if (st.d && districtsOf(v).indexOf(st.d) < 0) st.d = ""; update(); });
   seg($("fType"), TYPES, st.t, function(v){ st.t = v; update(); });
@@ -120,40 +129,81 @@ function sortList(list){
 }
 
 /* ---------- 畫卡片 ---------- */
+function tel(h){ return "tel:" + h.phone.replace(/\s/g,""); }
+function kmTxt(h){ return h._km == null ? "" : "約 " + (h._km < 10 ? h._km.toFixed(1) : Math.round(h._km)) + " 公里"; }
+function waitLevel(w){ return !w || w.t45n == null ? "" : w.t45n <= 1.5 ? " lv-ok" : w.t45n <= 3.5 ? " lv-mid" : " lv-hi"; }
 function card(h){
-  var w = waitOf(h);
+  var w = waitOf(h), open = !!openIds[h.id];
   var typeCls = h.type === "public" ? "b-pub" : h.type === "private" ? "b-pri" : "b-cm";
   var b = '<span class="bdg ' + typeCls + '">' + TYPE_NAME[h.type] + '</span>';
   if (h.ae) b += '<span class="bdg b-ae">' + (h.type === "public" ? "急症室 24 小時" : "24 小時門診／急症") + '</span>';
   if (h.sopc) b += '<span class="bdg b-sopc">' + (h.type === "public" ? "專科門診（需轉介）" : "專科門診") + '</span>';
+  if (st.s) b += '<span class="bdg b-hit">' + esc(st.s) + '</span>';
   b += '<span class="bdg b-kind">' + esc(h.kind) + '</span>';
 
   var wait = "";
   if (h.ae && h.type === "public" && w){
-    wait = '<div class="wait"><small class="wl">急症室等候時間（一半病人會喺以下時間內睇到醫生）</small>' +
-      '<span class="wv">次緊急／非緊急 <b>' + esc(w.t45) + '</b></span>' +
-      (w.t3 ? '<span class="wv">緊急 <b>' + esc(w.t3) + '</b></span>' : '') + '<small>醫管局即時數據 · 更新 ' + esc(w.time || waitTime) + '</small></div>';
+    wait = '<div class="wait' + waitLevel(w) + '"><span class="wv">急症室等候 <b>' + esc(w.t45) + '</b></span>' +
+      (w.t3 ? '<span class="wv wv2">緊急個案 ' + esc(w.t3) + '</span>' : '') + '<small>次緊急／非緊急，一半病人喺此時間內睇到醫生 · 更新 ' + esc(w.time || waitTime) + '</small></div>';
   }
   var specs = h.specs.length ? '<div class="specs">' + h.specs.map(function(s){ return '<span class="sp' + (s === st.s ? " on" : "") + '">' + esc(s) + '</span>'; }).join("") + '</div>' : "";
-  var dist = (st.sort === "near" && here && h._km != null) ? '<span class="dist">約 ' + (h._km < 10 ? h._km.toFixed(1) : Math.round(h._km)) + ' 公里</span>' : "";
+  var dist = (st.sort === "near" && here) ? '<span class="dist">' + kmTxt(h) + '</span>' : "";
   var meta = esc(h.region) + ' · ' + esc(h.district) + (h.cluster ? ' · 醫管局' + esc(h.cluster) + '聯網' : '');
 
-  return '<article class="card" id="h-' + esc(h.id) + '">' +
+  return '<article class="card' + (open ? " open" : "") + '" id="h-' + esc(h.id) + '">' +
     '<div class="c-head"><h2 class="c-name">' + esc(h.name) + '<span class="c-en">' + esc(h.en) + '</span></h2>' + dist + '</div>' +
     '<div class="c-meta">' + meta + '</div>' +
-    '<div class="badges">' + b + '</div>' + wait + specs +
-    '<div class="info">' +
-      '<div>' + I.pin + '<span>' + esc(h.addr) + '</span></div>' +
-      '<div>' + I.tel + '<a href="tel:' + esc(h.phone.replace(/\s/g,"")) + '">' + esc(h.phone) + '</a></div>' +
-      (h.opd ? '<div>' + I.clock + '<span>' + esc(h.opd) + '</span></div>' : '') +
+    '<div class="badges">' + b + '</div>' + wait +
+    '<div class="c-addr">' + I.pin + '<span>' + esc(h.addr) + '</span></div>' +
+    '<div class="more" id="more-' + esc(h.id) + '">' +
+      (specs ? '<div class="more-h">主要專科</div>' + specs : '') +
+      '<div class="info">' +
+        '<div>' + I.tel + '<a href="' + tel(h) + '">' + esc(h.phone) + '</a></div>' +
+        (h.opd ? '<div>' + I.clock + '<span>' + esc(h.opd) + '</span></div>' : '') +
+        (h.web ? '<div>' + I.web + '<a href="' + esc(h.web) + '" target="_blank" rel="noopener">醫院網站</a></div>' : '') +
+      '</div>' +
+      (h.note ? '<p class="note">' + esc(h.note) + '</p>' : '') +
+      '<div class="acts acts2"><button type="button" class="act" data-map="' + esc(h.id) + '" aria-expanded="false">' + I.map + '顯示地圖</button></div>' +
     '</div>' +
-    (h.note ? '<p class="note">' + esc(h.note) + '</p>' : '') +
     '<div class="acts">' +
-      '<a class="act pri" href="tel:' + esc(h.phone.replace(/\s/g,"")) + '">' + I.tel + '致電</a>' +
-      '<button type="button" class="act" data-map="' + esc(h.id) + '" aria-expanded="false">' + I.map + '顯示地圖</button>' +
-      '<a class="act" href="' + gmapLink(h) + '" target="_blank" rel="noopener">' + I.go + 'Google 地圖</a>' +
-      (h.web ? '<a class="act" href="' + esc(h.web) + '" target="_blank" rel="noopener">' + I.web + '網站</a>' : '') +
+      '<a class="act pri" href="' + tel(h) + '">' + I.tel + '致電</a>' +
+      '<a class="act" href="' + gmapLink(h) + '" target="_blank" rel="noopener">' + I.go + '導航</a>' +
+      '<button type="button" class="act act-more" data-more="' + esc(h.id) + '" aria-expanded="' + open + '" aria-controls="more-' + esc(h.id) + '">' + (open ? "收起" : "詳細") + '<span class="chev" aria-hidden="true"></span></button>' +
     '</div></article>';
+}
+
+/* ---------- 急症室一覽 ---------- */
+function erRow(h){
+  var w = waitOf(h), pub = h.type === "public";
+  var waitHtml = pub
+    ? (w ? '<div class="er-wait' + waitLevel(w) + '"><b>' + esc(w.t45) + '</b><span>' + (w.t3 ? "緊急 " + esc(w.t3) : "次緊急／非緊急") + '</span></div>'
+         : '<div class="er-wait na"><span>等候時間暫缺</span></div>')
+    : '<div class="er-wait na"><span>' + esc(h.opd || "24 小時門診") + '</span></div>';
+  return '<div class="er-row">' +
+    '<div class="er-main"><b class="er-name">' + esc(h.name) + '</b><span class="er-meta">' + esc(h.region) + ' · ' + esc(h.district) + '</span></div>' +
+    '<div class="er-dist">' + (here ? kmTxt(h) : "") + '</div>' + waitHtml +
+    '<div class="er-acts"><a class="act pri" href="' + tel(h) + '">' + I.tel + '致電</a><a class="act" href="' + gmapLink(h) + '" target="_blank" rel="noopener">' + I.go + '導航</a></div>' +
+  '</div>';
+}
+function renderEr(){
+  var list = H.filter(function(h){ return h.ae && (!st.r || h.region === st.r); });
+  if (here) list.forEach(function(h){ h._km = km(here, h); });
+  function cmpWait(a, b){
+    var wa = waitOf(a), wb = waitOf(b);
+    var va = wa && wa.t45n != null ? wa.t45n : Infinity, vb = wb && wb.t45n != null ? wb.t45n : Infinity;
+    return va - vb || a.name.localeCompare(b.name, "zh-HK");
+  }
+  var cmp = st.es === "near" && here ? function(a, b){ return a._km - b._km; } : st.es === "near" ? function(a, b){ return REGIONS.indexOf(a.region) - REGIONS.indexOf(b.region) || a.district.localeCompare(b.district, "zh-HK"); } : cmpWait;
+  var pub = list.filter(function(h){ return h.type === "public"; }).sort(cmp);
+  // 私家冇等候時間數據：有位置就按距離，冇就按地區
+  var pri = list.filter(function(h){ return h.type !== "public"; }).sort(here ? function(a, b){ return a._km - b._km; } : function(a, b){ return REGIONS.indexOf(a.region) - REGIONS.indexOf(b.region) || a.district.localeCompare(b.district, "zh-HK"); });
+  var hint = st.es === "near" && !here ? '<p class="er-hint">未取得你嘅位置，暫時按地區排列。撳「按距離」再試，或者喺瀏覽器允許定位。</p>' : '';
+  $("erList").innerHTML = hint +
+    '<h2 class="er-h">公立醫院急症室 <span>' + pub.length + ' 間 · 24 小時</span></h2>' +
+    '<p class="er-legend"><i class="lg ok"></i>1.5 小時內 <i class="lg mid"></i>2–3.5 小時 <i class="lg hi"></i>超過 3.5 小時（次緊急／非緊急，一半病人等候時間）</p>' +
+    '<div class="er-box">' + (pub.length ? pub.map(erRow).join("") : '<p class="er-empty">呢個區域冇公立急症室。</p>') + '</div>' +
+    '<h2 class="er-h">私家醫院 24 小時門診／急症 <span>' + pri.length + ' 間 · 收費較高，請先致電查詢</span></h2>' +
+    '<div class="er-box">' + (pri.length ? pri.map(erRow).join("") : '<p class="er-empty">呢個區域冇私家 24 小時門診。</p>') + '</div>';
 }
 
 function summary(n){
@@ -171,18 +221,26 @@ function render(){
   $("list").innerHTML = list.length ? list.map(card).join("") :
     '<div class="empty">搵唔到符合條件嘅醫院。<br>試下放寬地區或專科，或者<button type="button" class="link-btn" data-reset>清除篩選</button>。</div>';
 }
-function update(){ writeHash(); syncControls(); render(); }
+function renderAll(){ if (st.v === "er") renderEr(); else render(); }
+function update(){ writeHash(); syncControls(); renderAll(); }
 
 /* ---------- 地圖 ---------- */
 $("list").addEventListener("click", function(e){
   if (e.target.closest("[data-reset]")) { reset(); return; }
+  var mb = e.target.closest("[data-more]");
+  if (mb){
+    var id = mb.getAttribute("data-more"), cc = mb.closest(".card"), op = !cc.classList.contains("open");
+    cc.classList.toggle("open", op); if (op) openIds[id] = 1; else delete openIds[id];
+    mb.setAttribute("aria-expanded", op); mb.firstChild.textContent = op ? "收起" : "詳細";
+    return;
+  }
   var btn = e.target.closest("[data-map]"); if (!btn) return;
   var c = btn.closest(".card"), m = c.querySelector(".map");
   if (m){ m.remove(); btn.setAttribute("aria-expanded","false"); btn.lastChild.textContent = "顯示地圖"; return; }
   var h = H.filter(function(x){ return x.id === btn.getAttribute("data-map"); })[0];
   var div = document.createElement("div"); div.className = "map";
   div.innerHTML = '<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="' + esc(h.name) + '地圖" src="' + gmapEmbed(h) + '"></iframe>';
-  c.querySelector(".acts").before(div);
+  c.querySelector(".acts2").before(div);
   btn.setAttribute("aria-expanded","true"); btn.lastChild.textContent = "收起地圖";
 });
 
@@ -190,13 +248,15 @@ $("list").addEventListener("click", function(e){
 function locate(done){
   if (here) { done(true); return; }
   if (!navigator.geolocation) { done(false); return; }
-  $("summary").innerHTML = "正在取得你嘅位置…";
+  $(st.v === "er" ? "erList" : "summary").insertAdjacentHTML("afterbegin", '<p class="er-hint" data-loc>正在取得你嘅位置…</p>');
   navigator.geolocation.getCurrentPosition(function(p){
     here = {lat:p.coords.latitude, lng:p.coords.longitude}; done(true);
   }, function(){ done(false); }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
 }
 function useNear(fallback){
   locate(function(ok){
+    document.querySelectorAll("[data-loc]").forEach(function(e){ e.remove(); });
+    if (st.v === "er"){ update(); return; }
     if (!ok){
       st.sort = fallback || "area";
       update();
@@ -233,7 +293,7 @@ function loadWaits(){
     if (j.updateTime) waitTime = j.updateTime;
     if (arr.length){
       $("aedInfo").textContent = "急症室等候時間來自醫管局即時數據（" + waitTime + "），只供參考；急症室按病情緩急次序診症，危急病人會優先處理。";
-      render();
+      renderAll();
     }
   }).catch(function(){
     $("aedInfo").innerHTML = '暫時未能載入急症室即時等候時間，可用醫管局「HA Go」或<a href="https://www.ha.org.hk/" target="_blank" rel="noopener">醫管局網站</a>查看。';
@@ -252,17 +312,23 @@ $("fSort").addEventListener("change", function(e){
   st.sort = e.target.value;
   if (st.sort === "near") useNear("area"); else update();
 });
-function reset(){ st = {q:"",r:"",d:"",s:"",t:"",ae:false,sopc:false,acute:false,sort:"area"}; $("aedInfo").textContent = ""; update(); }
+function reset(){ var v = st.v; st = blank(); st.v = v; update(); }
 $("btnReset").addEventListener("click", reset);
 $("btnAe").addEventListener("click", function(){
-  st = {q:"",r:"",d:"",s:"",t:"",ae:true,sopc:false,acute:false,sort:"near"};
-  useNear("wait");
-  $("summary").scrollIntoView({behavior:"smooth", block:"start"});
+  st = blank(); st.v = "er"; st.es = "near";
+  update(); useNear();
+  $("tabs").scrollIntoView({behavior:"smooth", block:"start"});
 });
-window.addEventListener("hashchange", function(){ readHash(); syncControls(); render(); });
+$("tabs").addEventListener("click", function(e){
+  var b = e.target.closest("button"); if (!b) return;
+  st.v = b.getAttribute("data-v");
+  if (st.v === "er" && st.es === "near" && !here){ update(); useNear(); } else update();
+});
+window.addEventListener("hashchange", function(){ readHash(); syncControls(); renderAll(); });
 
 $("checked").textContent = window.DATA_CHECKED || "";
 readHash();
 if (st.sort === "near") st.sort = "area"; // 打開時唔自動問位置
-syncControls(); render(); loadWaits();
+syncControls(); renderAll(); loadWaits();
+if (st.v === "er" && st.es === "near") useNear();
 })();

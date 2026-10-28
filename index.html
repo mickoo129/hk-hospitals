@@ -35,6 +35,21 @@
     </div>
   </section>
 
+  <nav class="tabs mk-no-print" id="tabs" aria-label="檢視">
+    <button type="button" data-v="list">醫院目錄</button>
+    <button type="button" data-v="er">急症室一覽</button>
+  </nav>
+  <div class="aed-info mk-no-print" id="aedInfo"></div>
+
+  <section id="erView" hidden aria-label="急症室一覽">
+    <div class="er-bar mk-no-print">
+      <div class="seg" id="erRegion"></div>
+      <div class="seg" id="erSortSeg"></div>
+    </div>
+    <div id="erList"></div>
+  </section>
+
+  <div id="dirView">
   <section class="panel mk-no-print" aria-label="篩選">
     <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="search" placeholder="搜尋醫院名稱、地區或地址" autocomplete="off"></label>
@@ -70,8 +85,8 @@
   </section>
 
   <div class="summary" id="summary" aria-live="polite"></div>
-  <div class="aed-info mk-no-print" id="aedInfo"></div>
   <div class="grid" id="list"></div>
+  </div>
 
   <footer class="mk-footer">
     <div class="disc">
