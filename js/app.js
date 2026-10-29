@@ -74,6 +74,7 @@ function districtsOf(r){
 function syncControls(){
   document.querySelectorAll("#tabs button").forEach(function(b){ var on = b.getAttribute("data-v") === st.v; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
   $("erView").hidden = st.v !== "er"; $("dirView").hidden = st.v === "er";
+  document.body.setAttribute("data-v", st.v);
   seg($("erRegion"), [["","全港"]].concat(REGIONS.map(function(r){ return [r, r]; })), st.r, function(v){ st.r = v; update(); });
   seg($("erSortSeg"), [["near","按距離"],["wait","按等候時間"]], st.es, function(v){ st.es = v; if (v === "near") useNear(); else update(); });
   $("q").value = st.q;
