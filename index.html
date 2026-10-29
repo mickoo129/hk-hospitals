@@ -18,15 +18,19 @@
 <body>
 <div class="mk-print-head"><b>MKPA · 香港醫院指南</b><span>列印日期：<span class="mk-print-date"></span></span></div>
 
-<header class="top">
+<header class="top mk-header">
   <div class="mk-wrap top-row">
-    <a class="brand" href="./"><img class="mk-logo" src="favicon.svg" alt="" width="36" height="36">
-      <span><b>香港醫院指南</b><small>公立 · 私家 · 專科 · 急症</small></span></a>
-    <button type="button" class="mk-print-btn" onclick="window.print()">列印 / 存 PDF</button>
+    <a class="brand" href="./"><img class="mk-logo" src="favicon.svg" alt="" width="32" height="32">
+      <span><b>香港醫院指南</b></span></a>
+    <div class="top-act">
+      <button type="button" class="mk-share-btn" onclick="mkShare()">分享<span class="mk-long">呢個方案</span></button>
+      <button type="button" class="mk-print-btn" onclick="window.print()">列印<span class="mk-long"> / 存 PDF</span></button>
+    </div>
   </div>
 </header>
 
 <main class="mk-wrap">
+  <p class="intro mk-no-print">公立 · 私家醫院、專科門診同急症室，一頁搜尋。</p>
   <section class="sos mk-no-print" aria-label="緊急情況">
     <div class="sos-txt"><b>危急情況請即致電 999</b><span>胸痛、呼吸困難、中風徵狀、嚴重受傷等，唔好自行前往。</span></div>
     <div class="sos-btns">
@@ -105,6 +109,18 @@
 
 <script src="data/hospitals.js"></script>
 <script src="js/app.js"></script>
+<script>
+/* 分享呢個方案：手機彈出分享選單（WhatsApp 等），電腦複製連結。
+   url 要包括客人揀嘅設定（例如放喺 # 後面），但唔可以包括客人姓名。 */
+function mkShare(url){
+  url=url||location.href;
+  if(navigator.share&&matchMedia('(pointer:coarse)').matches){navigator.share({title:document.title,url:url}).catch(function(){});return;}
+  (navigator.clipboard?navigator.clipboard.writeText(url):Promise.reject()).then(
+    function(){mkToast('已複製連結，客人撳開會見到同一個方案');},
+    function(){window.prompt('複製呢條連結：',url);});
+}
+function mkToast(msg){var t=document.createElement('div');t.className='mk-toast';t.setAttribute('role','status');t.textContent=msg;(document.querySelector('dialog[open]')||document.body).appendChild(t);setTimeout(function(){t.remove();},2400);}
+</script>
 <script>
 (function(){var d=new Date();
 document.querySelectorAll('.mk-year').forEach(function(e){e.textContent=d.getFullYear();});
