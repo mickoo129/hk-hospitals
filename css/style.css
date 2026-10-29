@@ -281,5 +281,6 @@ body[data-v="er"]{--pc:var(--mk-danger);--pc-soft:var(--mk-danger-soft)}
 .tabs{background:rgba(255,255,255,.6)}
 .tabs button[data-v="list"]{--tc:var(--mk-cat-1)} .tabs button[data-v="er"]{--tc:var(--mk-danger)}
 .tabs button::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--tc);margin-right:8px;vertical-align:1px}
-.tabs button.on{box-shadow:inset 0 -3px 0 var(--tc),0 1px 3px rgba(14,94,87,.15)}
+.tabs button.on{background:var(--tc);color:#fff;box-shadow:0 1px 3px rgba(14,94,87,.15)}
+.tabs button.on::before{background:#fff}
 @media print{body{background:#fff!important}}
