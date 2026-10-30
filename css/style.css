@@ -93,7 +93,7 @@ svg{flex:none}
 .top-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding-top:8px;padding-bottom:8px}
 .brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;min-width:0}
 .brand .mk-logo{width:32px;height:32px}
-.brand b{display:block;font-size:18px;font-weight:900;letter-spacing:.02em;line-height:1.2;white-space:nowrap}
+.brand b{display:block;font-size:17px;font-weight:900;letter-spacing:.02em;line-height:1.2;white-space:nowrap}
 .top .mk-print-btn,.top .mk-share-btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
 .top .mk-print-btn:hover,.top .mk-share-btn:hover{background:rgba(255,255,255,.12)}
 
@@ -247,7 +247,6 @@ select:focus{outline:0;border-color:var(--mk-brand)}
 .disc p{font-size:13.5px;color:var(--mk-muted);margin:0 0 8px;max-width:960px}
 
 @media (max-width:420px){
-  .brand b{font-size:17px}
   .top .mk-print-btn{padding:0 10px;font-size:13px}
   .frow.two{grid-template-columns:minmax(0,1fr)}
   .sos-btns{width:100%}
