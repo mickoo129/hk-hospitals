@@ -19,9 +19,13 @@
 <div class="mk-print-head"><b>MKPA · 香港醫院指南</b><span>列印日期：<span class="mk-print-date"></span></span></div>
 
 <header class="top mk-header">
-  <div class="mk-wrap top-row">
+  <div class="mk-wrap top-row mk-bar">
     <a class="brand" href="./"><img class="mk-logo" src="favicon.svg" alt="" width="32" height="32">
       <span class="mk-name"><b>香港醫院指南</b><small class="mk-sub">公立、私家醫院、專科及急症搜尋</small></span></a>
+    <nav class="tabs mk-tabs mk-no-print" id="tabs" aria-label="檢視">
+      <button type="button" class="mk-tab mk-cat-1" data-v="list">醫院目錄</button>
+      <button type="button" class="mk-tab tab-er" data-v="er">急症室一覽</button>
+    </nav>
     <div class="top-act">
       <button type="button" class="mk-share-btn" onclick="mkShare()">分享<span class="mk-long">呢個方案</span></button>
       <button type="button" class="mk-print-btn" onclick="window.print()">列印<span class="mk-long"> / 存 PDF</span></button>
@@ -38,10 +42,6 @@
     </div>
   </section>
 
-  <nav class="tabs mk-no-print" id="tabs" aria-label="檢視">
-    <button type="button" data-v="list">醫院目錄</button>
-    <button type="button" data-v="er">急症室一覽</button>
-  </nav>
   <div class="aed-info mk-no-print" id="aedInfo"></div>
 
   <section id="erView" hidden aria-label="急症室一覽">
