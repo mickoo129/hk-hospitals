@@ -323,7 +323,7 @@ $("btnReset").addEventListener("click", reset);
 $("btnAe").addEventListener("click", function(){
   st = blank(); st.v = "er"; st.es = "near";
   update(); useNear();
-  $("tabs").scrollIntoView({behavior:"smooth", block:"start"});
+  $("aedInfo").scrollIntoView({behavior:"smooth", block:"start"});
 });
 $("tabs").addEventListener("click", function(e){
   var b = e.target.closest("button"); if (!b) return;
