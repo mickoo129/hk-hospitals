@@ -32,10 +32,12 @@ function km(a, b){
   var x = Math.sin(dLa/2)*Math.sin(dLa/2) + Math.cos(a.lat*toR)*Math.cos(b.lat*toR)*Math.sin(dLo/2)*Math.sin(dLo/2);
   return 2*R*Math.asin(Math.sqrt(x));
 }
-function mapQuery(h){ return h.name + " " + h.addr; }
+/* 地圖：有官方座標（geo）就用座標（最準），冇就用英文搜尋字（mq）。
+   唔用中文地址做搜尋，Google 會讀錯（例如威爾斯親王醫院曾經顯示咗葵芳）。 */
+function mapQuery(h){ return h.geo ? h.lat + "," + h.lng : (h.mq || h.en + ", Hong Kong"); }
 function gmapLink(h){ return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(mapQuery(h)); }
 function dirLink(h){ return "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(mapQuery(h)) + "&travelmode=transit"; }
-function gmapEmbed(h){ return "https://maps.google.com/maps?q=" + encodeURIComponent(mapQuery(h)) + "&hl=zh-TW&z=16&output=embed"; }
+function gmapEmbed(h){ return "https://maps.google.com/maps?q=" + encodeURIComponent(mapQuery(h)) + "&hl=zh-TW&z=17&output=embed"; }
 var I = {
   pin:'<svg viewBox="0 0 24 24"><path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
   tel:'<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>',
