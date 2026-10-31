@@ -214,8 +214,7 @@ function detailHtml(h){
           waitBlock(h) +
           (h.type === "private" ? '<p class="ins-link">睇私家醫院，醫保包唔包？<a href="' + INS_URL + '" target="_blank" rel="noopener">用「醫保對照」比較自願醫保 ↗</a></p>' : '') +
         '</div>' +
-        '<div class="d-col d-mapcol"><div class="map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="' + esc(h.name) + '地圖" src="' + gmapEmbed(h) + '"></iframe></div>' +
-          '<a class="map-link" href="' + gmapLink(h) + '" target="_blank" rel="noopener">喺 Google 地圖打開 ↗</a></div>' +
+        '<div class="d-col d-mapcol"><div class="map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="' + esc(h.name) + '地圖" src="' + gmapEmbed(h) + '"></iframe></div></div>' +
       '</div>' +
     '</div>';
 }

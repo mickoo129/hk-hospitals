@@ -180,10 +180,10 @@ window.HOSPITALS = [
  specs:["精神科"],note:"為嚴重智障人士提供住院及復康服務。",lat:22.41039,lng:113.97439,geo:"als"},
 
 /* ======================== 中醫醫院 ======================== */
-{id:"hkcmh",mq:"Chinese Medicine Hospital of Hong Kong, Tseung Kwan O",name:"香港中醫醫院",en:"Chinese Medicine Hospital of Hong Kong",type:"cm",kind:"中醫醫院",region:"新界",district:"西貢",cluster:"",
+{id:"hkcmh",name:"香港中醫醫院",en:"Chinese Medicine Hospital of Hong Kong",type:"cm",kind:"中醫醫院",region:"新界",district:"西貢",cluster:"",
  addr:"新界將軍澳百勝角路1號",phone:"3121 3121",web:"https://www.cmhhk.org.hk/",ae:false,sopc:true,
  opd:"中醫門診及日間住院：內科、外科、婦科、兒科、骨傷科、針灸；設政府資助及市場化服務（預約熱線星期一至六 9:00–18:00）",specs:["中醫"],
- note:"香港首間中醫醫院，2025 年 12 月起分階段服務；住院服務預計第二年起提供。",lat:22.3146,lng:114.2733},
+ note:"香港首間中醫醫院，2025 年 12 月起分階段服務；住院服務預計第二年起提供。",lat:22.30443,lng:114.27262,geo:"als"},
 
 /* ======================== 私家醫院 ======================== */
 {id:"hksh",fee:"平日日間 $400、晚上 $500、深夜 $700；星期日及假期 $500–700",name:"養和醫院",en:"Hong Kong Sanatorium & Hospital",type:"private",kind:"綜合醫院",region:"港島",district:"灣仔",cluster:"",
