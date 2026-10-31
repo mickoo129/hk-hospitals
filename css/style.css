@@ -448,5 +448,6 @@ body.dlg-open{overflow:hidden}
   .d-grid{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){ .hdlg[open]{animation:none!important} }
-.summary .acc-hint{margin:8px 0 0;font-size:13.5px}
-.summary .acc-hint b{font-family:inherit;font-size:inherit;color:inherit;margin:0}
+.acc-note{margin:4px 0 8px;font-size:12px;line-height:1.5;color:var(--mk-muted)}
+.summary .acc-note{margin:4px 0 0}
+@media print{.acc-note{display:none}}

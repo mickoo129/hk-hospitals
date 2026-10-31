@@ -431,20 +431,17 @@ window.addEventListener("afterprint", function(){ $("printDetail").innerHTML = "
 $("hDlg").addEventListener("close", function(){ document.body.classList.remove("dlg-open"); dlgId = ""; });
 
 /* ---------- 位置 ---------- */
-/* 部機回報嘅位置誤差（米）。手機有 GPS 通常幾十米；電腦、Wi-Fi 版 iPad 靠 Wi-Fi 或 IP 估，可以差幾公里 */
-var ACC_WARN = 1000;
-function accText(m){ return m >= 1000 ? "約 " + (m >= 10000 ? Math.round(m / 1000) : (m / 1000).toFixed(1)) + " 公里" : "約 " + Math.round(m) + " 米"; }
+/* 按距離排序時一律用細字提示：電腦、Wi-Fi 版 iPad 冇 GPS，部機自己報嘅誤差唔可靠，所以唔靠佢判斷 */
 function accHint(){
-  if (!here || !(here.acc > ACC_WARN)) return "";
-  return '<p class="er-hint acc-hint"><b>位置可能唔準：</b>你部機估嘅位置誤差' + accText(here.acc) + '，距離只供參考。電腦同只有 Wi-Fi 嘅 iPad 冇 GPS，可以' +
-    (st.v === "er" ? '用上面嘅掣揀返你所在區域' : '用「區域」或「地區」篩選') + '，或者用手機開呢頁。撳「路線」之後，亦可以喺 Google 地圖改起點。</p>';
+  if (!here) return "";
+  return '<p class="acc-note">用電腦或 iPad 時，定位可能唔準，距離只供參考；撳「路線」後可喺 Google 地圖自行改起點。</p>';
 }
 function locate(done){
   if (here) { done(true); return; }
   if (!navigator.geolocation) { done(false); return; }
   $(st.v === "er" ? "erList" : "summary").insertAdjacentHTML("afterbegin", '<p class="er-hint" data-loc>正在取得你嘅位置…</p>');
   navigator.geolocation.getCurrentPosition(function(p){
-    here = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy}; done(true);
+    here = {lat:p.coords.latitude, lng:p.coords.longitude}; done(true);
   }, function(){ done(false); }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
 }
 function useNear(fallback){
