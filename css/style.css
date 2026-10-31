@@ -160,6 +160,9 @@ select:focus{outline:0;border-color:var(--mk-brand)}
 .summary .hid .link-btn{padding:0 2px;font-size:13px}
 .aed-info{font-size:13px;color:var(--mk-muted);margin:0 2px 10px}
 .aed-info:empty{display:none}
+.aed-info b{color:var(--mk-ink);font-weight:700}
+.aed-info.stale{background:var(--mk-warn-soft);color:var(--mk-warn);border-radius:8px;padding:6px 10px}
+.aed-info.stale b{color:var(--mk-warn)}
 
 /* 卡片 */
 .grid{display:grid;grid-template-columns:1fr;gap:12px}

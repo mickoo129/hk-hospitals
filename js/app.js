@@ -13,7 +13,9 @@ var st = blank();
 var openIds = {};   // 已展開「詳細」嘅卡片
 var here = null;      // {lat,lng}
 var waits = {};       // 醫院名 → {t3, t45, t45n, time}
-var waitTime = "";
+var waitTime = "";   // 醫管局原文更新時間
+var waitAt = null;    // 解析後嘅 Date
+var openMaps = {};   // 已打開地圖嘅卡片（自動更新後保留）
 
 /* ---------- 工具 ---------- */
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -146,7 +148,7 @@ function card(h){
   var wait = "";
   if (h.ae && h.type === "public" && w){
     wait = '<div class="wait' + waitLevel(w) + '"><span class="wv">急症室等候 <b>' + esc(w.t45) + '</b></span>' +
-      (w.t3 ? '<span class="wv wv2">緊急個案 ' + esc(w.t3) + '</span>' : '') + '<small>次緊急／非緊急，一半病人喺此時間內睇到醫生 · 更新 ' + esc(w.time || waitTime) + '</small></div>';
+      (w.t3 ? '<span class="wv wv2">緊急個案 ' + esc(w.t3) + '</span>' : '') + '<small>次緊急／非緊急，一半病人喺此時間內睇到醫生 · <span class="w-age">' + ageText() + '</span></small></div>';
   }
   var specs = h.specs.length ? '<div class="specs">' + h.specs.map(function(s){ return '<span class="sp' + (s === st.s ? " on" : "") + '">' + esc(s) + '</span>'; }).join("") + '</div>' : "";
   var dist = (st.sort === "near" && here) ? '<span class="dist">' + kmTxt(h) + '</span>' : "";
@@ -165,7 +167,8 @@ function card(h){
         (h.web ? '<div>' + I.web + '<a href="' + esc(h.web) + '" target="_blank" rel="noopener">醫院網站</a></div>' : '') +
       '</div>' +
       (h.note ? '<p class="note">' + esc(h.note) + '</p>' : '') +
-      '<div class="acts acts2"><button type="button" class="act" data-map="' + esc(h.id) + '" aria-expanded="false">' + I.map + '顯示地圖</button></div>' +
+      (openMaps[h.id] ? '<div class="map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="' + esc(h.name) + '地圖" src="' + gmapEmbed(h) + '"></iframe></div>' : '') +
+      '<div class="acts acts2"><button type="button" class="act" data-map="' + esc(h.id) + '" aria-expanded="' + !!openMaps[h.id] + '">' + I.map + (openMaps[h.id] ? '收起地圖' : '顯示地圖') + '</button></div>' +
     '</div>' +
     '<div class="acts">' +
       '<a class="act pri" href="' + tel(h) + '">' + I.tel + '致電</a>' +
@@ -240,8 +243,9 @@ $("list").addEventListener("click", function(e){
   }
   var btn = e.target.closest("[data-map]"); if (!btn) return;
   var c = btn.closest(".card"), m = c.querySelector(".map");
-  if (m){ m.remove(); btn.setAttribute("aria-expanded","false"); btn.lastChild.textContent = "顯示地圖"; return; }
+  if (m){ delete openMaps[btn.getAttribute("data-map")]; m.remove(); btn.setAttribute("aria-expanded","false"); btn.lastChild.textContent = "顯示地圖"; return; }
   var h = H.filter(function(x){ return x.id === btn.getAttribute("data-map"); })[0];
+  openMaps[h.id] = 1;
   var div = document.createElement("div"); div.className = "map";
   div.innerHTML = '<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="' + esc(h.name) + '地圖" src="' + gmapEmbed(h) + '"></iframe>';
   c.querySelector(".acts2").before(div);
@@ -285,24 +289,67 @@ function toHours(v){
   if (/少於|<|&lt;/.test(s)) n = n - 0.01;
   return n;
 }
+/* 解析醫管局更新時間：「2026年10月31日 下午12時30分」或「31/10/2026 12:30 PM」 */
+function parseHaTime(t){
+  var m = String(t || "").match(/(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日\s*(上午|下午|中午)?\s*(\d{1,2})\s*[時:：]\s*(\d{1,2})/);
+  var y, mo, d, ap, h, mi;
+  if (m){ y=+m[1]; mo=+m[2]; d=+m[3]; ap=m[4]||""; h=+m[5]; mi=+m[6]; if (ap === "下午" && h < 12) h += 12; if (ap === "上午" && h === 12) h = 0; }
+  else {
+    m = String(t || "").match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM|上午|下午)?/i);
+    if (!m) return null;
+    d=+m[1]; mo=+m[2]; y=+m[3]; h=+m[4]; mi=+m[5]; ap=(m[6]||"").toUpperCase();
+    if ((ap === "PM" || ap === "下午") && h < 12) h += 12; if ((ap === "AM" || ap === "上午") && h === 12) h = 0;
+  }
+  // 醫管局時間係香港時間（UTC+8），唔理用家部機設乜時區
+  return new Date(Date.UTC(y, mo - 1, d, h - 8, mi));
+}
+function ageMin(){ return waitAt ? Math.max(0, Math.round((Date.now() - waitAt.getTime()) / 60000)) : null; }
+function ageText(){
+  var a = ageMin();
+  if (a == null) return waitTime ? "更新 " + esc(waitTime) : "";
+  var hhmm = new Intl.DateTimeFormat("zh-HK", {timeZone:"Asia/Hong_Kong", hour:"numeric", minute:"2-digit", hour12:true}).format(waitAt);
+  return (a < 1 ? "啱啱更新" : a < 60 ? "約 " + a + " 分鐘前更新" : "約 " + Math.floor(a/60) + " 小時" + (a % 60 ? " " + (a % 60) + " 分鐘" : "") + "前更新") + "（" + hhmm + "）";
+}
+function paintInfo(){
+  var el = $("aedInfo");
+  if (!waitTime){ return; }
+  var a = ageMin(), stale = a != null && a > 45;
+  el.classList.toggle("stale", stale);
+  el.innerHTML = '急症室等候時間：醫管局即時數據，<b class="w-age">' + ageText() + '</b>。' +
+    (stale ? '醫管局數據好似暫時冇更新，請以 HA Go 或醫院現場資訊為準。' : '頁面開住會每 5 分鐘自動更新。') +
+    '只供參考；急症室按病情緩急次序診症，危急病人會優先處理。';
+}
+function tickAge(){
+  paintInfo();
+  document.querySelectorAll(".w-age").forEach(function(e){ e.textContent = ageText(); });
+}
+var lastLoad = 0, loading = false;
 function loadWaits(){
+  if (loading) return; loading = true; lastLoad = Date.now();
   fetch("/.netlify/functions/aed", {cache:"no-store"}).then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(j){
     var arr = Array.isArray(j) ? j : (j.waitTime || j.waitingTime || Object.keys(j).map(function(k){ return j[k]; }).filter(Array.isArray)[0] || []);
+    var t = j.updateTime || (arr[0] && arr[0].updateTime) || "";
+    if (!arr.length) throw 0;
+    var changed = t !== waitTime;
+    waits = {};
     arr.forEach(function(x){
       if (!x || !x.hospName) return;
       var t45 = x.t45p50 != null ? x.t45p50 : x.topWait;
-      waits[norm(x.hospName)] = { t3: fmt(x.t3p50, "分鐘"), t45: fmt(t45, "小時"), t45n: toHours(t45), time: x.updateTime || "" };
-      if (x.updateTime) waitTime = x.updateTime;
+      waits[norm(x.hospName)] = { t3: fmt(x.t3p50, "分鐘"), t45: fmt(t45, "小時"), t45n: toHours(t45), time: x.updateTime || t };
     });
-    if (j.updateTime) waitTime = j.updateTime;
-    if (arr.length){
-      $("aedInfo").textContent = "急症室等候時間來自醫管局即時數據（" + waitTime + "），只供參考；急症室按病情緩急次序診症，危急病人會優先處理。";
-      renderAll();
-    }
+    waitTime = t; waitAt = parseHaTime(t);
+    paintInfo();
+    if (changed) renderAll(); else tickAge();   // 數據冇變就只更新「幾多分鐘前」，唔重畫（唔會跳位）
   }).catch(function(){
+    if (waitTime){ tickAge(); return; }   // 之前讀到過就保留舊數據
     $("aedInfo").innerHTML = '暫時未能載入急症室即時等候時間，可用醫管局「HA Go」或<a href="https://www.ha.org.hk/" target="_blank" rel="noopener">醫管局網站</a>查看。';
-  });
+  }).then(function(){ loading = false; });
 }
+var REFRESH = 5 * 60 * 1000;
+setInterval(function(){ if (!document.hidden) loadWaits(); }, REFRESH);
+setInterval(tickAge, 30 * 1000);
+// 手機鎖咗屏／轉咗 app 再返嚟：超過 5 分鐘就即刻更新
+document.addEventListener("visibilitychange", function(){ if (!document.hidden){ tickAge(); if (Date.now() - lastLoad > REFRESH) loadWaits(); } });
 
 /* ---------- 綁定 ---------- */
 var qTimer;
