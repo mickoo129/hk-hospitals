@@ -402,7 +402,7 @@ function summary(n){
   var sortTxt = st.sort === "near" ? (here ? "按距離排序" : "按距離排序（未取得位置）") : st.sort === "wait" ? "按急症室等候時間排序" : "按地區排序";
   var hid = st.inst || st.q || st.fav ? 0 : H.filter(function(h){ return h.inst && match(h, true); }).length;
   var more = hid ? '<span class="hid">另有 ' + hid + ' 間療養／護養院舍已隱藏 <button type="button" class="link-btn" data-inst>顯示</button></span>' : '';
-  return '<b>' + n + '</b> 間醫院' + (tags.length ? '　' + tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join("") : '　（全部）') + '　<span>' + sortTxt + '</span>' + more;
+  return '<b>' + n + '</b> 間醫院' + (tags.length ? '　' + tags.map(function(t){ return '<span class="tag">' + esc(t) + '</span>'; }).join("") : '') + '　<span>' + sortTxt + '</span>' + more;
 }
 
 function render(){
