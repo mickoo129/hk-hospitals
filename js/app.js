@@ -279,7 +279,7 @@ function renderEr(){
   var pub = list.filter(function(h){ return h.type === "public"; }).sort(cmp);
   // 私家冇等候時間數據：有位置就按距離，冇就按地區
   var pri = list.filter(function(h){ return h.type !== "public"; }).sort(here ? function(a, b){ return a._km - b._km; } : function(a, b){ return REGIONS.indexOf(a.region) - REGIONS.indexOf(b.region) || a.district.localeCompare(b.district, "zh-HK"); });
-  var hint = st.es === "near" && !here ? '<p class="er-hint">未取得你嘅位置，暫時按地區排列。撳「按距離」再試，或者喺瀏覽器允許定位。</p>' : '';
+  var hint = st.es === "near" && !here ? '<p class="er-hint">未取得你嘅位置，暫時按地區排列。撳「按距離」再試，或者喺瀏覽器允許定位。</p>' : (st.es === "near" ? accHint() : '');
   $("erList").innerHTML = hint + guideHtml() + surgeBanner() +
     '<h2 class="er-h">公立醫院急症室 <span>' + pub.length + ' 間 · 24 小時</span></h2>' +
     '<p class="er-legend"><i class="lg ok"></i>1.5 小時內 <i class="lg mid"></i>2–3.5 小時 <i class="lg hi"></i>超過 3.5 小時（次緊急／非緊急，一半病人等候時間）</p>' +
@@ -407,7 +407,7 @@ function summary(n){
 
 function render(){
   var list = sortList(H.filter(function(h){ return match(h); }));
-  $("summary").innerHTML = summary(list.length);
+  $("summary").innerHTML = summary(list.length) + (st.sort === "near" ? accHint() : "");
   $("list").innerHTML = list.length ? list.map(card).join("") :
     (st.fav && !Object.keys(fav).length
       ? '<div class="empty">你未收藏任何醫院。<br>喺醫院卡片右上角撳星號 ☆ 就可以收藏，下次喺呢度一撳就搵到。</div>'
@@ -431,12 +431,20 @@ window.addEventListener("afterprint", function(){ $("printDetail").innerHTML = "
 $("hDlg").addEventListener("close", function(){ document.body.classList.remove("dlg-open"); dlgId = ""; });
 
 /* ---------- 位置 ---------- */
+/* 部機回報嘅位置誤差（米）。手機有 GPS 通常幾十米；電腦、Wi-Fi 版 iPad 靠 Wi-Fi 或 IP 估，可以差幾公里 */
+var ACC_WARN = 1000;
+function accText(m){ return m >= 1000 ? "約 " + (m >= 10000 ? Math.round(m / 1000) : (m / 1000).toFixed(1)) + " 公里" : "約 " + Math.round(m) + " 米"; }
+function accHint(){
+  if (!here || !(here.acc > ACC_WARN)) return "";
+  return '<p class="er-hint acc-hint"><b>位置可能唔準：</b>你部機估嘅位置誤差' + accText(here.acc) + '，距離只供參考。電腦同只有 Wi-Fi 嘅 iPad 冇 GPS，可以' +
+    (st.v === "er" ? '用上面嘅掣揀返你所在區域' : '用「區域」或「地區」篩選') + '，或者用手機開呢頁。撳「路線」之後，亦可以喺 Google 地圖改起點。</p>';
+}
 function locate(done){
   if (here) { done(true); return; }
   if (!navigator.geolocation) { done(false); return; }
   $(st.v === "er" ? "erList" : "summary").insertAdjacentHTML("afterbegin", '<p class="er-hint" data-loc>正在取得你嘅位置…</p>');
   navigator.geolocation.getCurrentPosition(function(p){
-    here = {lat:p.coords.latitude, lng:p.coords.longitude}; done(true);
+    here = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy}; done(true);
   }, function(){ done(false); }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
 }
 function useNear(fallback){
