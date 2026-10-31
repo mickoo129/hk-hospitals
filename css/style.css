@@ -314,7 +314,7 @@ body[data-v="er"]{--pc-soft:#FEF6F6}
 .er-acts{grid-template-columns:1fr 1fr auto}
 .er-acts .fav{height:38px;width:38px}
 .er-row.is-fav .er-name::after{content:" ★";color:#E0A800}
-.chk-fav #favN{margin-left:2px;font-family:var(--mk-num)}
+.chk-fav #favN{margin-left:2px;font-family:var(--mk-num);font-size:inherit}
 .b-rescue{background:var(--mk-danger);color:#fff}
 .er-main .b-rescue{margin-top:4px;width:max-content}
 .c-mtr svg{stroke:var(--mk-muted)}
