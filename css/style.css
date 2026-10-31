@@ -303,3 +303,148 @@ body[data-v="er"]{--pc-soft:#FEF6F6}
 .mk-header{box-shadow:inset 0 -3px 0 var(--pc)}
 @media print{.mk-header{box-shadow:none}}
 #aedInfo{scroll-margin-top:130px}
+
+/* ===== 2026-10 新增：收藏、搶救中、港鐵、收費、輪候、高峰期、急症指引、普通科 ===== */
+.c-side{display:flex;align-items:center;gap:6px;flex:none}
+.fav{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--mk-line);background:#fff;cursor:pointer;padding:0;flex:none}
+.fav svg{width:19px;height:19px;fill:none;stroke:var(--mk-muted);stroke-width:1.8;stroke-linejoin:round}
+.fav:hover{border-color:var(--mk-warn)}
+.fav.on{border-color:#E7C46A;background:var(--mk-warn-soft)}
+.fav.on svg{fill:#E0A800;stroke:#B98700}
+.er-acts{grid-template-columns:1fr 1fr auto}
+.er-acts .fav{height:38px;width:38px}
+.er-row.is-fav .er-name::after{content:" ★";color:#E0A800}
+.chk-fav #favN{margin-left:2px;font-family:var(--mk-num);font-size:inherit}
+.b-rescue{background:var(--mk-danger);color:#fff}
+.er-main .b-rescue{margin-top:4px;width:max-content}
+.c-mtr svg{stroke:var(--mk-muted)}
+.c-mtr{color:var(--mk-muted);font-size:14px}
+.fee-n{display:block;font-size:12px;color:var(--mk-muted);margin-top:2px}
+.er-fee{font-weight:700;color:var(--mk-ink);font-size:13px}
+.er-note{font-size:13px;color:var(--mk-muted);margin:8px 2px 0}
+.ins-link{margin:0;font-size:13.5px;background:var(--mk-brand-soft);border-radius:8px;padding:8px 10px}
+.ins-link a{font-weight:700}
+.sop-hit{margin:0;font-size:14px;background:var(--mk-cat-4-soft);color:var(--mk-cat-4-ink);border-radius:8px;padding:6px 10px}
+.sop-hit b,.waits b{font-family:var(--mk-num)}
+.sop-hit span,.waits li span{color:var(--mk-muted);font-size:13px}
+.waits{display:flex;flex-direction:column;gap:6px}
+.waits ul{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:3px;font-size:14px}
+.waits-n{margin:0;font-size:12.5px;color:var(--mk-muted)}
+.occ{font-size:13px;font-weight:700;color:var(--mk-muted)}
+.occ.mid{color:var(--mk-warn)}
+.occ.hi{color:var(--mk-danger)}
+.occ-n{font-size:12px;color:var(--mk-muted)}
+.surge-l{margin:0}
+.surge{display:flex;flex-direction:column;gap:2px;background:var(--mk-warn-soft);color:var(--mk-warn);border-radius:12px;padding:10px 14px;margin:0 0 12px;font-size:14px}
+.surge>b{font-size:15px}
+.surge span b{font-family:var(--mk-num)}
+/* 急症指引 */
+.guide{background:#fff;border:1px solid var(--mk-line);border-radius:14px;margin:0 0 14px}
+.guide summary{list-style:none;cursor:pointer;padding:12px 44px 12px 16px;position:relative;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px}
+.guide summary::-webkit-details-marker{display:none}
+.guide summary::after{content:"";position:absolute;right:18px;top:50%;width:8px;height:8px;border-right:2px solid var(--mk-brand-ink);border-bottom:2px solid var(--mk-brand-ink);transform:translateY(-70%) rotate(45deg)}
+.guide[open] summary::after{transform:translateY(-30%) rotate(-135deg)}
+.guide summary b{font-size:16px;color:var(--mk-deep)}
+.guide summary span{font-size:13px;color:var(--mk-muted)}
+.guide-body{padding:0 16px 14px;font-size:14.5px}
+.guide-body p{margin:0 0 8px}
+.triage{margin:0 0 12px;padding:0;list-style:none;display:grid;gap:6px}
+.triage li{display:grid;gap:2px;border-radius:10px;padding:8px 12px;background:#F7F8F8}
+.triage li>b{font-size:14.5px}
+.triage li span{font-size:14px;color:var(--mk-ink)}
+.triage .t1{background:var(--mk-danger-soft)}.triage .t1>b{color:var(--mk-danger)}
+.triage .t2{background:#FEF3F0}.triage .t2>b{color:#B23B1E}
+.triage .t3{background:var(--mk-warn-soft)}.triage .t3>b{color:var(--mk-warn)}
+.triage .t4{background:var(--mk-brand-soft)}.triage .t4>b{color:var(--mk-brand-ink)}
+.guide-h{font-weight:700;color:var(--mk-deep)}
+.fees{margin:0 0 10px;padding-left:20px;display:grid;gap:3px}
+.fees b{font-family:var(--mk-num)}
+.guide-n{font-size:12.5px;color:var(--mk-muted)}
+/* 普通科門診 */
+.gp-intro{background:#fff;border:1px solid var(--mk-line);border-radius:14px;padding:12px 14px;margin:0 0 8px;font-size:14px}
+.gp-intro p{margin:0 0 6px}.gp-intro p:last-child{margin:0}
+.gp-d{background:#fff;border:1px solid var(--mk-line);border-radius:12px;margin:0 0 6px;overflow:hidden}
+.gp-d summary{cursor:pointer;padding:11px 14px;font-weight:700;display:flex;justify-content:space-between;gap:8px;list-style:none}
+.gp-d summary::-webkit-details-marker{display:none}
+.gp-d summary span{font-weight:500;color:var(--mk-muted);font-size:13px}
+.gp-d summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--mk-brand-ink);border-bottom:2px solid var(--mk-brand-ink);transform:rotate(45deg);margin:4px 2px 0 12px;flex:none}
+.gp-d[open] summary::after{transform:rotate(-135deg);margin-top:8px}
+.gp-d summary span{margin-left:auto}
+.gp-list{list-style:none;margin:0;padding:0}
+.gp-list li{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px 10px;padding:10px 14px;border-top:1px solid var(--mk-line)}
+.gp-main{min-width:0}
+.gp-main b{display:block;font-size:15px}
+.gp-main span{font-size:12.5px;color:var(--mk-muted)}
+.gp-q{text-align:right;font-family:var(--mk-num);font-weight:700;color:var(--mk-brand-ink);white-space:nowrap;font-size:15px}
+.gp-q small{display:block;font-family:var(--mk-sans);font-weight:500;font-size:11.5px;color:var(--mk-muted)}
+.gp-q.na{color:var(--mk-muted)}
+@media (max-width:480px){
+  .gp-list li{grid-template-columns:1fr auto;grid-template-areas:"m q" "a a"}
+  .gp-main{grid-area:m}.gp-q{grid-area:q}.gp-list .act{grid-area:a;justify-content:center}
+}
+@media print{
+  .fav,.guide,.gp-d:not([open]),.ins-link,.er-note a{display:none!important}
+  .gp-intro{break-inside:avoid}
+  .gp-list li{break-inside:avoid}
+}
+.er-wait .er-fee{font-family:var(--mk-sans);font-size:13px;line-height:1.4}
+@media (min-width:760px){ .er-row{grid-template-columns:minmax(0,1.6fr) 90px minmax(0,1.3fr) 250px} }
+
+/* ===== 醫院詳細：彈出視窗（列印用 #printDetail 複本）=====*/
+.print-detail{display:none}
+/* =====（電腦置中；手機由下面升上嚟）===== */
+.c-open{all:unset;cursor:pointer;color:inherit;font:inherit}
+.c-open:hover{text-decoration:underline;text-underline-offset:3px}
+.c-open:focus-visible{outline:2px solid var(--mk-brand);outline-offset:2px;border-radius:4px}
+button.er-name{all:unset;display:block;cursor:pointer;font-size:16.5px;font-weight:700;color:var(--mk-ink);line-height:1.3}
+button.er-name:hover{text-decoration:underline;text-underline-offset:3px}
+button.er-name:focus-visible{outline:2px solid var(--mk-brand);outline-offset:2px}
+.act-more{margin-left:auto}
+.hdlg{width:min(880px,calc(100vw - 48px));max-height:min(88vh,900px);padding:0;border:0;border-radius:18px;background:var(--mk-surface);color:var(--mk-ink);box-shadow:0 24px 60px rgba(14,40,38,.28);overflow:auto;overscroll-behavior:contain}
+.hdlg::backdrop{background:rgba(14,40,38,.45)}
+.hdlg[open]{animation:dlgIn .18s ease-out}
+@keyframes dlgIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+body.dlg-open{overflow:hidden}
+.d-head{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 18px 12px;background:var(--mk-surface);border-bottom:1px solid var(--mk-line)}
+.d-title{min-width:0}
+.d-title h2{margin:0;font-size:21px;font-weight:900;color:var(--mk-deep);line-height:1.3}
+.d-title .c-meta{margin-top:4px}
+.d-tools{display:flex;gap:6px;flex:none}
+.d-close{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--mk-line);background:#fff;cursor:pointer;padding:0}
+.d-close svg{width:18px;height:18px;fill:none;stroke:var(--mk-ink);stroke-width:2.2;stroke-linecap:round}
+.d-close:hover{background:var(--mk-bg)}
+.d-body{padding:14px 18px 20px;display:flex;flex-direction:column;gap:12px}
+.d-acts{display:flex;flex-wrap:wrap;gap:8px}
+.d-acts .act{min-height:42px}
+.d-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+.d-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.d-mapcol{position:sticky;top:76px}
+.d-mapcol .map{aspect-ratio:1/1}
+.map-link{font-size:13.5px;font-weight:700}
+.d-body .info{font-size:15px}
+.d-body .c-mtr{color:var(--mk-ink)}
+@media (max-width:760px){
+  .d-grid{grid-template-columns:minmax(0,1fr)}
+  .d-mapcol{position:static}
+  .d-mapcol .map{aspect-ratio:4/3}
+}
+@media (max-width:600px){
+  .hdlg{width:100vw;max-width:100vw;max-height:92vh;margin:auto 0 0;border-radius:18px 18px 0 0}
+  .hdlg[open]{animation:sheetIn .22s ease-out}
+  @keyframes sheetIn{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+  .d-head{padding:14px 16px 10px}
+  .d-head::before{content:"";position:absolute;top:6px;left:50%;width:40px;height:4px;margin-left:-20px;border-radius:2px;background:var(--mk-line)}
+  .d-title h2{font-size:19px}
+  .d-body{padding:12px 16px calc(20px + env(safe-area-inset-bottom))}
+  .d-acts .act{flex:1 1 100%;justify-content:center}
+}
+@media print{
+  body.dlg-open #dirView,body.dlg-open #erView,body.dlg-open .sos,body.dlg-open .aed-info{display:none!important}
+  .hdlg,.hdlg[open],.hdlg::backdrop{display:none!important}
+  body.dlg-open .print-detail{display:block}
+  .d-head{position:static;padding:0 0 6px;border:0}
+  .d-tools,.d-acts,.d-mapcol,.map-link{display:none!important}
+  .d-body{padding:8px 0}
+  .d-grid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){ .hdlg[open]{animation:none!important} }
