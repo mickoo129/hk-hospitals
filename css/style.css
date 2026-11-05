@@ -142,6 +142,18 @@ select:focus{outline:0;border-color:var(--mk-brand)}
 .seg button:hover{border-color:var(--mk-brand)}
 .seg button.on{background:var(--mk-brand);border-color:var(--mk-brand);color:#fff;font-weight:700}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
+.fmore{display:contents}
+.ftoggle{display:none}
+@media (max-width:767px){
+  .ftoggle{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 12px;border:1px solid var(--mk-line);border-radius:10px;background:#fff;color:var(--mk-ink);font:inherit;font-size:15px;font-weight:700;cursor:pointer;text-align:left}
+  .ftoggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .ftoggle span{flex:1;min-width:0}
+  .ftoggle.has{border-color:var(--mk-brand);color:var(--mk-brand-ink);background:var(--mk-brand-soft)}
+  .ftoggle .fchev{transition:transform .15s}
+  .panel.open .ftoggle .fchev{transform:rotate(180deg)}
+  .fmore{display:none}
+  .panel.open .fmore{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;padding-top:4px}
+}
 .chk{position:relative;cursor:pointer}
 .chk input{position:absolute;opacity:0;pointer-events:none}
 .chk span{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--mk-line);background:#fff;font-size:15px}

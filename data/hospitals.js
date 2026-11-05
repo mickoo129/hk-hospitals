@@ -23,7 +23,19 @@
  *   lat/lng   座標：geo:"als" 嘅係地政總署地址查詢（ALS）官方座標；冇 geo 嘅係大約位置
  *   mq        地圖搜尋字（ALS 搵唔到嘅醫院先用，例如新醫院），有就用嚟開 Google 地圖，冇就用座標
  */
-window.DATA_CHECKED = "2026 年 10 月 31 日";
+window.DATA_CHECKED = "2026 年 11 月 6 日";
+/* 搜尋用俗稱、簡稱同英文縮寫（唔顯示，只用嚟搵） */
+window.ALIASES = {
+  pyneh:"東區醫院 東區 尤德 PYNEH", rh:"律敦治 RH", tskh:"鄧肇堅 TSKH", tweh:"東院 TWEH", qmh:"瑪麗 QMH", gh:"葛量洪 GH",
+  dkch:"根德公爵 大口環 DKCH", tyh:"贊育 TYH", twh:"東華 TWH", qeh:"伊院 伊利沙伯 QEH", kwh:"廣華 KWH", hkeh:"眼科醫院 HKEH",
+  kh:"九龍醫院 KH", hkch:"兒童醫院 HKCH", kth:"啟德 KTH", hkbh:"佛教 HKBH", olmh:"聖母 OLMH", uch:"聯合醫院 聯合 UCH",
+  tkoh:"將軍澳 TKOH", hohh:"靈實 HHH", pmh:"瑪嘉烈 PMH", cmc:"明愛 CMC", kch:"葵涌 KCH", ych:"仁濟 YCH", nlth:"北大嶼山 NLTH",
+  pwh:"威院 威爾斯 PWH", ahnh:"那打素 大埔那打素 AHNH", ndh:"北區 NDH", tph:"大埔醫院 TPH", sh:"沙田醫院 SH",
+  tmh:"屯院 屯門 TMH", poh:"博愛 POH", tswh:"天水圍 TSWH", cph:"青山 CPH", slh:"小欖 SLH", hkcmh:"中醫醫院",
+  hksh:"養和 HKSH", stpaul:"聖保祿 SPH", "hkah-sr":"港安 司徒拔道 HKAH", gleneagles:"港怡 GHK", canossa:"嘉諾撒", matilda:"明德 MIH",
+  hkbaptist:"浸會醫院 浸會 HKBH", sth:"法國醫院 聖德肋撒 STH", evangel:"播道", pbh:"寶血", union:"仁安 UH",
+  cuhkmc:"中大醫院 中大 CUHKMC", "hkah-tw":"港安 荃灣港安 HKAH"
+};
 window.FEE_CHECKED = "2026 年 10 月（綜合 2026 年 5 至 7 月傳媒整理嘅醫院公佈收費）";
 window.SPECS = ["內科","外科","骨科","兒科","婦產科","眼科","耳鼻喉科","精神科","腫瘤科","心臟科","腦神經外科","復康科","紓緩治療","家庭醫學","中醫"];
 
@@ -120,7 +132,7 @@ window.HOSPITALS = [
  specs:["內科","復康科","紓緩治療"],lat:22.31377,lng:114.25627,geo:"als"},
 
 /* ======================== 九龍西聯網 ======================== */
-{id:"pmh",name:"瑪嘉烈醫院",en:"Princess Margaret Hospital",type:"public",kind:"綜合醫院",region:"九龍",district:"葵青",cluster:"九龍西",
+{id:"pmh",name:"瑪嘉烈醫院",en:"Princess Margaret Hospital",type:"public",kind:"綜合醫院",region:"新界",district:"葵青",cluster:"九龍西",
  addr:"九龍荔枝角瑪嘉烈醫院道2-10號",phone:"2990 1111",web:"https://www.ha.org.hk/pmh/",ae:true,aeName:"瑪嘉烈醫院",sopc:true,
  specs:minus(ACUTE_PUB,["精神科"]),note:"九龍西眼科服務設於明愛醫院；精神科設於葵涌醫院。",lat:22.34006,lng:114.1347,geo:"als"},
 {id:"cmc",name:"明愛醫院",en:"Caritas Medical Centre",type:"public",kind:"綜合醫院",region:"九龍",district:"深水埗",cluster:"九龍西",
@@ -195,7 +207,7 @@ window.HOSPITALS = [
 {id:"hkah-sr",fee:"普通科 $450 起（星期日及假期 $550 起）；急症診症 $1,200",name:"香港港安醫院－司徒拔道",en:"Hong Kong Adventist Hospital – Stubbs Road",type:"private",kind:"綜合醫院",region:"港島",district:"灣仔",cluster:"",
  addr:"香港司徒拔道40號",phone:"3651 8888",web:"https://www.hkah.org.hk/",ae:true,sopc:true,
  opd:"24 小時急症",specs:PRIV_BIG,lat:22.2638,lng:114.18405,geo:"als"},
-{id:"gleneagles",mtr:"港鐵海洋公園站 C 出口步行約 8 分鐘；或黃竹坑站 A 出口轉乘免費穿梭巴士",fee:"平日日間 $400、晚上 $500、深夜 $800；危急個案 $1,500（2026 年 7 月 1 日至 10 月 31 日收費）",name:"港怡醫院",en:"Gleneagles Hospital Hong Kong",type:"private",kind:"綜合醫院",region:"港島",district:"南區",cluster:"",
+{id:"gleneagles",mtr:"港鐵海洋公園站 C 出口步行約 8 分鐘；或黃竹坑站 A 出口轉乘免費穿梭巴士",fee:"平日日間 $400、晚上 $500、深夜 $800；危急個案 $1,500（2026 年 7 月至 10 月公佈收費；11 月起未有新公佈，請先致電查詢）",name:"港怡醫院",en:"Gleneagles Hospital Hong Kong",type:"private",kind:"綜合醫院",region:"港島",district:"南區",cluster:"",
  addr:"香港黃竹坑南風徑1號",phone:"3153 9000",web:"https://gleneagles.hk/",ae:true,sopc:true,
  opd:"24 小時門診及急症",specs:PRIV_BIG.concat(["精神科"]),lat:22.25216,lng:114.17623,geo:"als"},
 {id:"canossa",fee:"平日日間 $388、晚上 $500、深夜 $800",name:"嘉諾撒醫院",en:"Canossa Hospital (Caritas)",type:"private",kind:"綜合醫院",region:"港島",district:"中西區",cluster:"",

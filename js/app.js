@@ -107,6 +107,9 @@ function syncControls(){
   $("fAe").checked = st.ae; $("fSopc").checked = st.sopc; $("fAcute").checked = st.acute; $("fInst").checked = st.inst; $("fFav").checked = st.fav;
   $("favN").textContent = Object.keys(fav).length ? "（" + Object.keys(fav).length + "）" : "";
   $("fSort").value = st.sort;
+  var n = [st.r, st.d, st.s, st.t, st.ae, st.sopc, st.acute, st.inst, st.fav].filter(Boolean).length + (st.sort !== "area" ? 1 : 0);
+  $("fToggleTxt").textContent = "篩選及排序" + (n ? "（已揀 " + n + " 項）" : "");
+  $("fToggle").classList.toggle("has", n > 0);
 }
 
 /* ---------- 篩選 + 排序 ---------- */
@@ -121,7 +124,7 @@ function match(h, ignoreInst){
   if (st.acute && h.kind !== "綜合醫院") return false;
   if (st.fav && !fav[h.id]) return false;
   if (st.q){
-    var hay = norm([h.name, h.en, h.region, h.district, h.cluster, h.addr, h.kind, h.specs.join(" "), TYPE_NAME[h.type]].join(" "));
+    var hay = norm([h.name, h.en, (window.ALIASES || {})[h.id] || "", h.region, h.district, h.cluster, h.addr, h.kind, h.specs.join(" "), TYPE_NAME[h.type]].join(" "));
     var words = st.q.trim().split(/\s+/);
     for (var i = 0; i < words.length; i++) if (hay.indexOf(norm(words[i])) < 0) return false;
   }
@@ -198,14 +201,14 @@ function detailHtml(h){
       '<div class="badges">' + badgesOf(h, w) + '</div>' + waitBox(h, w) + (sg ? '<p class="surge-l">' + sg + '</p>' : '') +
       '<div class="d-acts">' +
         '<a class="act pri" href="' + tel(h) + '">' + I.tel + '致電 ' + esc(h.phone) + '</a>' +
-        '<a class="act" href="' + dirLink(h) + '" target="_blank" rel="noopener">' + I.route + '由我位置去（公共交通）</a>' +
+        '<a class="act" href="' + dirLink(h) + '" target="_blank" rel="noopener">' + I.route + '路線</a>' +
         (h.web ? '<a class="act" href="' + esc(h.web) + '" target="_blank" rel="noopener">' + I.web + '醫院網站</a>' : '') +
       '</div>' +
       '<div class="d-grid">' +
         '<div class="d-col">' +
           '<div class="info">' +
             '<div>' + I.pin + '<span>' + esc(h.addr) + '</span></div>' +
-            (h.mtr ? '<div class="c-mtr">' + I.train + '<span>' + esc(mtrTxt(h.mtr)) + '<small class="fee-n">醫院公佈嘅交通資料；實際路線可撳「由我位置去」</small></span></div>' : '') +
+            (h.mtr ? '<div class="c-mtr">' + I.train + '<span>' + esc(mtrTxt(h.mtr)) + '<small class="fee-n">醫院公佈嘅交通資料；實際路線可撳「路線」</small></span></div>' : '') +
             (h.opd ? '<div>' + I.clock + '<span>' + esc(h.opd) + '</span></div>' : '') +
             (h.fee ? '<div>' + I.cash + '<span>門診／急症診金：' + esc(h.fee) + '<small class="fee-n">唔包藥物、檢查及治療；資料：' + esc(window.FEE_CHECKED || "") + '，以醫院公佈為準</small></span></div>' : '') +
           '</div>' +
@@ -462,6 +465,7 @@ function useNear(fallback){
 function fmt(v, unit){
   if (v == null || v === "") return "";
   var s = String(v).trim();
+  if (/^0(\.0+)?\s*(小時|分鐘)?$/.test(s)) return "唔使等";   // 醫管局半夜冇病人輪候時報 0（唔用「冇人等」，易睇錯做「有人等」）
   return /^[\d.]+$/.test(s) ? s + " " + unit : s;
 }
 function toHours(v){
@@ -491,6 +495,8 @@ function ageText(){
   var a = ageMin();
   if (a == null) return waitTime ? "更新 " + esc(waitTime) : "";
   var hhmm = new Intl.DateTimeFormat("zh-HK", {timeZone:"Asia/Hong_Kong", hour:"numeric", minute:"2-digit", hour12:true}).format(waitAt);
+  var h24 = +new Intl.DateTimeFormat("en-GB", {timeZone:"Asia/Hong_Kong", hour:"2-digit", hourCycle:"h23"}).format(waitAt);
+  if (h24 < 6) hhmm = hhmm.replace("上午", "凌晨");
   return (a < 1 ? "啱啱更新" : a < 60 ? "約 " + a + " 分鐘前更新" : "約 " + Math.floor(a/60) + " 小時" + (a % 60 ? " " + (a % 60) + " 分鐘" : "") + "前更新") + "（" + hhmm + "）";
 }
 function paintInfo(){
@@ -593,6 +599,11 @@ document.addEventListener("visibilitychange", function(){ if (!document.hidden){
 
 /* ---------- 綁定 ---------- */
 var qTimer;
+/* 手機：篩選摺埋，撳先打開 */
+$("fToggle").addEventListener("click", function(){
+  var p = this.closest(".panel"), open = !p.classList.contains("open");
+  p.classList.toggle("open", open); this.setAttribute("aria-expanded", open);
+});
 $("q").addEventListener("input", function(e){ clearTimeout(qTimer); qTimer = setTimeout(function(){ st.q = e.target.value.trim(); writeHash(); render(); }, 150); });
 $("fDistrict").addEventListener("change", function(e){ st.d = e.target.value; update(); });
 $("fSpec").addEventListener("change", function(e){ st.s = e.target.value; update(); });
