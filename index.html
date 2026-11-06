@@ -13,7 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Noto+Sans+HK:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20261031f">
+<link rel="stylesheet" href="css/style.css?v=20261106a">
 </head>
 <body>
 <div class="mk-print-head"><b>MKPA · 香港醫院指南</b><span>列印日期：<span class="mk-print-date"></span></span></div>
@@ -55,7 +55,9 @@
   <div id="dirView">
   <section class="panel mk-no-print" aria-label="篩選">
     <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="搜尋醫院、地區或地址" autocomplete="off"></label>
+      <input id="q" type="search" placeholder="搜尋醫院（可用簡稱如伊院）" autocomplete="off"></label>
+    <button type="button" class="ftoggle" id="fToggle" aria-expanded="false" aria-controls="fMore"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span id="fToggleTxt">篩選及排序</span><svg class="fchev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="fmore" id="fMore">
 
     <div class="frow">
       <span class="flabel">區域</span>
@@ -87,6 +89,7 @@
       </select></label>
       <button type="button" class="link-btn" id="btnReset">清除篩選</button>
     </div>
+    </div>
   </section>
 
   <div class="summary" id="summary" aria-live="polite"></div>
@@ -111,8 +114,8 @@
   </footer>
 </main>
 
-<script src="data/hospitals.js?v=20261031f"></script>
-<script src="js/app.js?v=20261031f"></script>
+<script src="data/hospitals.js?v=20261106a"></script>
+<script src="js/app.js?v=20261106a"></script>
 <script>
 /* 分享呢個方案：手機彈出分享選單（WhatsApp 等），電腦複製連結。
    url 要包括客人揀嘅設定（例如放喺 # 後面），但唔可以包括客人姓名。 */
