@@ -108,7 +108,7 @@ function syncControls(){
   $("favN").textContent = Object.keys(fav).length ? "（" + Object.keys(fav).length + "）" : "";
   $("fSort").value = st.sort;
   var n = [st.r, st.d, st.s, st.t, st.ae, st.sopc, st.acute, st.inst, st.fav].filter(Boolean).length + (st.sort !== "area" ? 1 : 0);
-  $("fToggleTxt").textContent = "篩選及排序" + (n ? "（已揀 " + n + " 項）" : "");
+  $("fToggleTxt").textContent = "篩選及排序" + (n ? "（已選 " + n + " 項）" : "");
   $("fToggle").classList.toggle("has", n > 0);
 }
 
@@ -186,7 +186,7 @@ function card(h){
     (h.mtr ? '<div class="c-addr c-mtr">' + I.train + '<span>' + esc(mtrTxt(h.mtr)) + '</span></div>' : '') +
     '<div class="acts">' +
       '<a class="act pri" href="' + tel(h) + '">' + I.tel + '致電</a>' +
-      '<a class="act" href="' + dirLink(h) + '" target="_blank" rel="noopener" title="用 Google 地圖由你而家位置計公共交通路線">' + I.route + '路線</a>' +
+      '<a class="act" href="' + dirLink(h) + '" target="_blank" rel="noopener" title="用 Google 地圖按你現時位置計算公共交通路線">' + I.route + '路線</a>' +
       '<button type="button" class="act act-more" data-open="' + esc(h.id) + '" aria-haspopup="dialog">詳細</button>' +
     '</div></article>';
 }
@@ -208,14 +208,14 @@ function detailHtml(h){
         '<div class="d-col">' +
           '<div class="info">' +
             '<div>' + I.pin + '<span>' + esc(h.addr) + '</span></div>' +
-            (h.mtr ? '<div class="c-mtr">' + I.train + '<span>' + esc(mtrTxt(h.mtr)) + '<small class="fee-n">醫院公佈嘅交通資料；實際路線可撳「路線」</small></span></div>' : '') +
+            (h.mtr ? '<div class="c-mtr">' + I.train + '<span>' + esc(mtrTxt(h.mtr)) + '<small class="fee-n">醫院公佈的交通資料；實際路線可按「路線」查看</small></span></div>' : '') +
             (h.opd ? '<div>' + I.clock + '<span>' + esc(h.opd) + '</span></div>' : '') +
-            (h.fee ? '<div>' + I.cash + '<span>門診／急症診金：' + esc(h.fee) + '<small class="fee-n">唔包藥物、檢查及治療；資料：' + esc(window.FEE_CHECKED || "") + '，以醫院公佈為準</small></span></div>' : '') +
+            (h.fee ? '<div>' + I.cash + '<span>門診／急症診金：' + esc(h.fee) + '<small class="fee-n">不包括藥物、檢查及治療；資料：' + esc(window.FEE_CHECKED || "") + '，以醫院公佈為準</small></span></div>' : '') +
           '</div>' +
           (specs ? '<div class="more-h">主要專科</div>' + specs : '') +
           (h.note ? '<p class="note">' + esc(h.note) + '</p>' : '') +
           waitBlock(h) +
-          (h.type === "private" ? '<p class="ins-link">睇私家醫院，醫保包唔包？<a href="' + INS_URL + '" target="_blank" rel="noopener">用「醫保對照」比較自願醫保 ↗</a></p>' : '') +
+          (h.type === "private" ? '<p class="ins-link">看私家醫院，醫保是否包括？<a href="' + INS_URL + '" target="_blank" rel="noopener">用「醫保對照」比較自願醫保 ↗</a></p>' : '') +
         '</div>' +
         '<div class="d-col d-mapcol"><div class="map"><iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="' + esc(h.name) + '地圖" src="' + gmapEmbed(h) + '"></iframe></div></div>' +
       '</div>' +
@@ -267,7 +267,7 @@ function erRow(h){
       (sg ? ' · ' + sg : '') + '</span>' +
       (w && w.rescue ? '<span class="bdg b-rescue">多名病人正在搶救中</span>' : '') + '</div>' +
     '<div class="er-dist">' + (here ? kmTxt(h) : "") + '</div>' + waitHtml +
-    '<div class="er-acts"><a class="act pri" href="' + tel(h) + '">' + I.tel + '致電</a><a class="act" href="' + dirLink(h) + '" target="_blank" rel="noopener" title="用 Google 地圖由你而家位置計公共交通路線">' + I.route + '路線</a>' + favBtn(h) + '</div>' +
+    '<div class="er-acts"><a class="act pri" href="' + tel(h) + '">' + I.tel + '致電</a><a class="act" href="' + dirLink(h) + '" target="_blank" rel="noopener" title="用 Google 地圖按你現時位置計算公共交通路線">' + I.route + '路線</a>' + favBtn(h) + '</div>' +
   '</div>';
 }
 function renderEr(){
@@ -282,27 +282,27 @@ function renderEr(){
   var pub = list.filter(function(h){ return h.type === "public"; }).sort(cmp);
   // 私家冇等候時間數據：有位置就按距離，冇就按地區
   var pri = list.filter(function(h){ return h.type !== "public"; }).sort(here ? function(a, b){ return a._km - b._km; } : function(a, b){ return REGIONS.indexOf(a.region) - REGIONS.indexOf(b.region) || a.district.localeCompare(b.district, "zh-HK"); });
-  var hint = st.es === "near" && !here ? '<p class="er-hint">未取得你嘅位置，暫時按地區排列。撳「按距離」再試，或者喺瀏覽器允許定位。</p>' : (st.es === "near" ? accHint() : '');
+  var hint = st.es === "near" && !here ? '<p class="er-hint">未取得你的位置，暫時按地區排列。請按「按距離」再試，或在瀏覽器允許定位。</p>' : (st.es === "near" ? accHint() : '');
   $("erList").innerHTML = hint + guideHtml() + surgeBanner() +
     '<h2 class="er-h">公立醫院急症室 <span>' + pub.length + ' 間 · 24 小時</span></h2>' +
     '<p class="er-legend"><i class="lg ok"></i>1.5 小時內 <i class="lg mid"></i>2–3.5 小時 <i class="lg hi"></i>超過 3.5 小時（次緊急／非緊急，一半病人等候時間）</p>' +
-    '<div class="er-box">' + (pub.length ? pub.map(erRow).join("") : '<p class="er-empty">呢個區域冇公立急症室。</p>') + '</div>' +
+    '<div class="er-box">' + (pub.length ? pub.map(erRow).join("") : '<p class="er-empty">這個區域沒有公立急症室。</p>') + '</div>' +
     '<h2 class="er-h">私家醫院 24 小時門診／急症 <span>' + pri.length + ' 間 · 收費較高，請先致電查詢</span></h2>' +
-    '<div class="er-box">' + (pri.length ? pri.map(erRow).join("") : '<p class="er-empty">呢個區域冇私家 24 小時門診。</p>') + '</div>' +
-    '<p class="er-note">私家診金唔包藥物、檢查及治療，資料：' + esc(window.FEE_CHECKED || "") + '，以醫院公佈為準。睇私家醫院，醫保包唔包？<a href="' + INS_URL + '" target="_blank" rel="noopener">用「醫保對照」比較 ↗</a></p>' +
+    '<div class="er-box">' + (pri.length ? pri.map(erRow).join("") : '<p class="er-empty">這個區域沒有私家 24 小時門診。</p>') + '</div>' +
+    '<p class="er-note">私家診金不包括藥物、檢查及治療，資料：' + esc(window.FEE_CHECKED || "") + '，以醫院公佈為準。看私家醫院，醫保是否包括？<a href="' + INS_URL + '" target="_blank" rel="noopener">用「醫保對照」比較 ↗</a></p>' +
     gopcHtml();
 }
 
 /* ---------- 「我應該去急症室嗎？」 ---------- */
 function guideHtml(){
-  return '<details class="guide" id="guide"' + (guideOpen ? " open" : "") + '><summary><b>我應該去急症室嗎？</b><span>分流級別、收費同其他選擇</span></summary>' +
+  return '<details class="guide" id="guide"' + (guideOpen ? " open" : "") + '><summary><b>我應該去急症室嗎？</b><span>分流級別、收費及其他選擇</span></summary>' +
     '<div class="guide-body">' +
-    '<p>急症室按<b>病情緩急</b>而唔係先到先得睇症。護士會先評估，分做五級：</p>' +
+    '<p>急症室按<b>病情緩急</b>而不是先到先得診症。護士會先評估，分為五級：</p>' +
     '<ol class="triage">' +
-      '<li class="t1"><b>第 I 類 危殆</b><span>例如心跳停頓、昏迷、嚴重創傷、休克。<b>即刻打 999</b>，會即時處理。</span></li>' +
+      '<li class="t1"><b>第 I 類 危殆</b><span>例如心跳停頓、昏迷、嚴重創傷、休克。<b>立即致電 999</b>，會即時處理。</span></li>' +
       '<li class="t2"><b>第 II 類 危急</b><span>例如嚴重胸痛、呼吸非常困難、中風徵狀（面歪、手腳無力、口齒不清）、大量出血。應盡快召救護車。</span></li>' +
       '<li class="t3"><b>第 III 類 緊急</b><span>例如骨折、劇烈痛楚、持續嘔吐或腹痛。</span></li>' +
-      '<li class="t4"><b>第 IV、V 類 次緊急／非緊急</b><span>例如傷風感冒、輕微損傷、長期病拎藥。輪候時間最長，<b>可以考慮普通科門診或私家診所</b>（見本頁下面）。</span></li>' +
+      '<li class="t4"><b>第 IV、V 類 次緊急／非緊急</b><span>例如傷風感冒、輕微損傷、長期病取藥。輪候時間最長，<b>可以考慮普通科門診或私家診所</b>（見本頁下面）。</span></li>' +
     '</ol>' +
     '<p class="guide-h">公立醫院收費（合資格人士，2026 年 1 月 1 日起）</p>' +
     '<ul class="fees">' +
@@ -311,7 +311,7 @@ function guideHtml(){
       '<li>專科門診：每次 <b>$250</b></li>' +
       '<li>全年公營醫療收費設 <b>$10,000</b> 上限；有經濟困難可以申請醫療費用減免</li>' +
     '</ul>' +
-    '<p class="guide-n">以上只係一般參考，唔係醫療建議；有懷疑就應該求醫。收費以醫管局公佈為準。</p>' +
+    '<p class="guide-n">以上只屬一般參考，並非醫療建議；如有懷疑應盡快求醫。收費以醫管局公佈為準。</p>' +
     '</div></details>';
 }
 var guideOpen = false;
@@ -334,14 +334,14 @@ function waitBlock(h){
   var surg = [];
   [["cataract","白內障手術","眼科"],["joint","全關節置換手術","骨科"]].forEach(function(x){
     var d = ops[x[0]] && ops[x[0]][h.cluster];
-    if (d && h.specs.indexOf(x[2]) >= 0 && h.kind === "綜合醫院") surg.push('<li>' + x[1] + '：中位數 <b>' + d.med + ' 個月</b><span>（九成病人喺 ' + d.p90 + ' 個月內做完；聯網輪候中 ' + d.wl.toLocaleString("en") + ' 人）</span></li>');
+    if (d && h.specs.indexOf(x[2]) >= 0 && h.kind === "綜合醫院") surg.push('<li>' + x[1] + '：中位數 <b>' + d.med + ' 個月</b><span>（九成病人在 ' + d.p90 + ' 個月內完成；聯網輪候中 ' + d.wl.toLocaleString("en") + ' 人）</span></li>');
   });
   if (!rows.length && !surg.length) return "";
   return '<div class="waits">' +
     (rows.length ? '<div class="more-h">專科門診新症輪候（' + esc(h.cluster) + '聯網，中位數）</div><ul>' + rows.join("") + '</ul>' +
-      '<p class="waits-n">醫管局 ' + esc(sopInfo.period) + ' 數字，每季更新（下次：' + esc(sopInfo.next) + '）。穩定新症一般要喺住址所屬聯網排期。</p>' : '') +
+      '<p class="waits-n">醫管局 ' + esc(sopInfo.period) + ' 數字，每季更新（下次：' + esc(sopInfo.next) + '）。穩定新症一般須在住址所屬聯網排期。</p>' : '') +
     (surg.length ? '<div class="more-h">手術輪候（' + esc(h.cluster) + '聯網）</div><ul>' + surg.join("") + '</ul>' +
-      '<p class="waits-n">醫管局 ' + esc(opsInfo.period) + ' 已完成手術嘅輪候時間，每季更新。</p>' : '') +
+      '<p class="waits-n">醫管局 ' + esc(opsInfo.period) + ' 已完成手術的輪候時間，每季更新。</p>' : '') +
     '</div>';
 }
 
@@ -391,17 +391,17 @@ function gopcHtml(){
     }).join("");
     return '<details class="gp-d" data-gd="' + esc(d) + '"' + (gopcOpen[d] ? " open" : "") + '><summary>' + esc(d) + '<span>' + by[d].length + ' 間</span></summary><ul class="gp-list">' + rows + '</ul></details>';
   }).join("");
-  return '<h2 class="er-h" id="gopc">唔係急症？普通科（家庭醫學）門診 <span>醫管局 · 每次 $150</span></h2>' +
-    '<div class="gp-intro"><p>傷風感冒、發燒、輕微不適，可以預約公立普通科門診，通常唔使喺急症室等幾個鐘。用 <b>HA Go</b> 手機程式或各區電話預約系統預約；部分診所夜晚、星期日及公眾假期都有應診。</p>' +
-    '<p class="waits-n">籌額係醫管局公佈過去 4 星期（' + esc(gopcInfo.period) + '）每日平均數，每星期一更新，唔代表而家仲有冇籌。</p></div>' +
-    (html || '<p class="er-empty">呢個區域冇資料。</p>');
+  return '<h2 class="er-h" id="gopc">不是急症？普通科（家庭醫學）門診 <span>醫管局 · 每次 $150</span></h2>' +
+    '<div class="gp-intro"><p>傷風感冒、發燒、輕微不適，可以預約公立普通科門診，通常不用在急症室輪候數小時。用 <b>HA Go</b> 手機程式或各區電話預約系統預約；部分診所夜晚、星期日及公眾假期都有應診。</p>' +
+    '<p class="waits-n">籌額是醫管局公佈過去 4 星期（' + esc(gopcInfo.period) + '）每日平均數，每星期一更新，不代表現時仍有籌額。</p></div>' +
+    (html || '<p class="er-empty">這個區域沒有資料。</p>');
 }
 
 function summary(n){
   var tags = [];
   if (st.r) tags.push(st.r); if (st.d) tags.push(st.d); if (st.t) tags.push(TYPE_NAME[st.t]);
   if (st.s) tags.push(st.s); if (st.ae) tags.push("24 小時急症"); if (st.sopc) tags.push("專科門診");
-  if (st.acute) tags.push("綜合醫院"); if (st.inst) tags.push("包括院舍"); if (st.fav) tags.push("我嘅收藏"); if (st.q) tags.push("「" + st.q + "」");
+  if (st.acute) tags.push("綜合醫院"); if (st.inst) tags.push("包括院舍"); if (st.fav) tags.push("我的收藏"); if (st.q) tags.push("「" + st.q + "」");
   var sortTxt = st.sort === "near" ? (here ? "按距離排序" : "按距離排序（未取得位置）") : st.sort === "wait" ? "按急症室等候時間排序" : "按地區排序";
   var hid = st.inst || st.q || st.fav ? 0 : H.filter(function(h){ return h.inst && match(h, true); }).length;
   var more = hid ? '<span class="hid">另有 ' + hid + ' 間療養／護養院舍已隱藏 <button type="button" class="link-btn" data-inst>顯示</button></span>' : '';
@@ -413,8 +413,8 @@ function render(){
   $("summary").innerHTML = summary(list.length) + (st.sort === "near" ? accHint() : "");
   $("list").innerHTML = list.length ? list.map(card).join("") :
     (st.fav && !Object.keys(fav).length
-      ? '<div class="empty">你未收藏任何醫院。<br>喺醫院卡片右上角撳星號 ☆ 就可以收藏，下次喺呢度一撳就搵到。</div>'
-      : '<div class="empty">搵唔到符合條件嘅醫院。<br>試下放寬地區或專科，或者<button type="button" class="link-btn" data-reset>清除篩選</button>。</div>');
+      ? '<div class="empty">你未收藏任何醫院。<br>在醫院卡片右上角按星號 ☆ 即可收藏，下次在這裡一按便找到。</div>'
+      : '<div class="empty">找不到符合條件的醫院。<br>請嘗試放寬地區或專科，或<button type="button" class="link-btn" data-reset>清除篩選</button>。</div>');
 }
 function renderAll(){ if (st.v === "er") renderEr(); else render(); refreshDetail(); }
 function update(){ writeHash(); syncControls(); renderAll(); }
@@ -437,12 +437,12 @@ $("hDlg").addEventListener("close", function(){ document.body.classList.remove("
 /* 按距離排序時一律用細字提示：電腦、Wi-Fi 版 iPad 冇 GPS，部機自己報嘅誤差唔可靠，所以唔靠佢判斷 */
 function accHint(){
   if (!here) return "";
-  return '<p class="acc-note">用電腦或 iPad 時，定位可能唔準，距離只供參考；撳「路線」後可喺 Google 地圖自行改起點。</p>';
+  return '<p class="acc-note">使用電腦或 iPad 時，定位可能不準確，距離只供參考；按「路線」後可在 Google 地圖自行更改起點。</p>';
 }
 function locate(done){
   if (here) { done(true); return; }
   if (!navigator.geolocation) { done(false); return; }
-  $(st.v === "er" ? "erList" : "summary").insertAdjacentHTML("afterbegin", '<p class="er-hint" data-loc>正在取得你嘅位置…</p>');
+  $(st.v === "er" ? "erList" : "summary").insertAdjacentHTML("afterbegin", '<p class="er-hint" data-loc>正在取得你的位置…</p>');
   navigator.geolocation.getCurrentPosition(function(p){
     here = {lat:p.coords.latitude, lng:p.coords.longitude}; done(true);
   }, function(){ done(false); }, {enableHighAccuracy:false, timeout:10000, maximumAge:300000});
@@ -465,7 +465,7 @@ function useNear(fallback){
 function fmt(v, unit){
   if (v == null || v === "") return "";
   var s = String(v).trim();
-  if (/^0(\.0+)?\s*(小時|分鐘)?$/.test(s)) return "唔使等";   // 醫管局半夜冇病人輪候時報 0（唔用「冇人等」，易睇錯做「有人等」）
+  if (/^0(\.0+)?\s*(小時|分鐘)?$/.test(s)) return "無需等候";   // 醫管局半夜冇病人輪候時報 0（唔用「冇人等」，易睇錯做「有人等」）
   return /^[\d.]+$/.test(s) ? s + " " + unit : s;
 }
 function toHours(v){
@@ -497,7 +497,7 @@ function ageText(){
   var hhmm = new Intl.DateTimeFormat("zh-HK", {timeZone:"Asia/Hong_Kong", hour:"numeric", minute:"2-digit", hour12:true}).format(waitAt);
   var h24 = +new Intl.DateTimeFormat("en-GB", {timeZone:"Asia/Hong_Kong", hour:"2-digit", hourCycle:"h23"}).format(waitAt);
   if (h24 < 6) hhmm = hhmm.replace("上午", "凌晨");
-  return (a < 1 ? "啱啱更新" : a < 60 ? "約 " + a + " 分鐘前更新" : "約 " + Math.floor(a/60) + " 小時" + (a % 60 ? " " + (a % 60) + " 分鐘" : "") + "前更新") + "（" + hhmm + "）";
+  return (a < 1 ? "剛剛更新" : a < 60 ? "約 " + a + " 分鐘前更新" : "約 " + Math.floor(a/60) + " 小時" + (a % 60 ? " " + (a % 60) + " 分鐘" : "") + "前更新") + "（" + hhmm + "）";
 }
 function paintInfo(){
   var el = $("aedInfo");
@@ -505,7 +505,7 @@ function paintInfo(){
   var a = ageMin(), stale = a != null && a > 45;
   el.classList.toggle("stale", stale);
   el.innerHTML = '急症室等候時間：醫管局即時數據，<b class="w-age">' + ageText() + '</b>。' +
-    (stale ? '醫管局數據好似暫時冇更新，請以 HA Go 或醫院現場資訊為準。' : '頁面開住會每 5 分鐘自動更新。') +
+    (stale ? '醫管局數據似乎暫時沒有更新，請以 HA Go 或醫院現場資訊為準。' : '頁面開住會每 5 分鐘自動更新。') +
     '只供參考；急症室按病情緩急次序診症，危急病人會優先處理。';
 }
 function tickAge(){
