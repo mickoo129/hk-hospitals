@@ -36,7 +36,7 @@ window.ALIASES = {
   hkbaptist:"浸會醫院 浸會 HKBH", sth:"法國醫院 聖德肋撒 STH", evangel:"播道", pbh:"寶血", union:"仁安 UH",
   cuhkmc:"中大醫院 中大 CUHKMC", "hkah-tw":"港安 荃灣港安 HKAH"
 };
-window.FEE_CHECKED = "2026 年 10 月（綜合 2026 年 5 至 7 月傳媒整理嘅醫院公佈收費）";
+window.FEE_CHECKED = "2026 年 10 月（綜合 2026 年 5 至 7 月傳媒整理的醫院公佈收費）";
 window.SPECS = ["內科","外科","骨科","兒科","婦產科","眼科","耳鼻喉科","精神科","腫瘤科","心臟科","腦神經外科","復康科","紓緩治療","家庭醫學","中醫"];
 
 (function(){
